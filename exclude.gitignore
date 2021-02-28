@@ -1,0 +1,9 @@
+*.list
+*.elf
+*.mem
+*.size
+*.d
+*.o
+*.project
+*.cproject
+.settings
