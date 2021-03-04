@@ -16,11 +16,8 @@ WARNING : Not on the same port !!
 #define LED7     	GPIOD, 11
 #define FRONT_LED	GPIOD, 14
 #define BODY_LED	GPIOB, 2
-#define SELECTOR1	GPIOC, 13
-#define SELECTOR2 	GPIOC, 14
-#define SELECTOR3	GPIOC, 15
-#define SELECTOR4 	GPIOD, 4
 
-#define LED_USED	LED7
+void delay(unsigned int n);
+
 
 #endif /* MAIN_H_ */
