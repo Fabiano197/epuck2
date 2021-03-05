@@ -17,7 +17,7 @@ WARNING : Not on the same port !!
 #define FRONT_LED	GPIOD, 14
 #define BODY_LED	GPIOB, 2
 
-void delay(unsigned int n);
+void delay_seconds(unsigned int n);
 
 
 #endif /* MAIN_H_ */

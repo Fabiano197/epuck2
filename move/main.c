@@ -15,8 +15,9 @@
 void _init(void) {}
 
 // Simple delay function
-void delay(unsigned int n)
+void delay_seconds(unsigned int n)
 {
+	n *= 4000000;
     while (n--) {
         __asm__ volatile ("nop");
     }
@@ -26,18 +27,25 @@ void delay(unsigned int n)
 int main(void)
 {
     SystemClock_Config();
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIODEN;
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOEEN;
 
-    // Enable GPIOD and GPIOE peripheral clock
-    RCC->AHB1ENR    |= RCC_AHB1ENR_GPIOBEN | RCC_AHB1ENR_GPIODEN;
+    gpio_config_output_opendrain(FRONT_LED);
+    gpio_clear(FRONT_LED);
 
-    gpio_config_output_af_pushpull(FRONT_LED);
-    gpio_config_select_af(FRONT_LED, 2);
-    init_selector();
-    timer4_start();
-    pwm(TIM4, 3, 20);
+    motor_init();
+    motor_set_position(4, 4, 3.0, 3.0);
+    delay_seconds(5);
+    motor_set_position(8, 8, 3, 3);
+
+    //gpio_config_output_af_pushpull(FRONT_LED);
+    //gpio_config_select_af(FRONT_LED, 2);
+    //init_selector();
+    //timer4_start();
+    //pwm(TIM4, 3, 20);
 
     while (1) {
-       //pwm(TIM4, 3, get_selector()*100/15);
+    	;
     }
 }
 

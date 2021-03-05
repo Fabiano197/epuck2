@@ -6,6 +6,21 @@
 #define PRESCALER   84       // TODO: configure timer frequency
 #define COUNTER_MAX 10000       // TODO: configure timer max counter
 
+void timer6_start(void)
+{
+    // Enable TIM6 clock
+    RCC->APB1ENR |= RCC_APB1ENR_TIM6EN;
+
+    // Enable TIM6 interrupt vector
+    NVIC_EnableIRQ(TIM6_DAC_IRQn);
+
+    // Configure TIM6
+    TIM6->PSC = PRESCALER - 1;      // Note: final timer clock  = timer clock / (prescaler + 1)
+    TIM6->ARR = COUNTER_MAX - 1;	// Note: timer reload takes 1 cycle, thus -1
+    TIM6->DIER |= TIM_DIER_UIE;  	// Enable update interrupt
+    TIM6->CR1 |= TIM_CR1_CEN;    	// Enable timer
+}
+
 void timer7_start(void)
 {
     // Enable TIM7 clock
@@ -62,7 +77,7 @@ void pwm(TIM_TypeDef* timer, unsigned int channel, unsigned int duty_cycle){
 }
 
 // Timer 7 Interrupt Service Routine
-void TIM7_IRQHandler(void)
+void TIM7_IRQHandler_old(void)
 {
     /*
     *
