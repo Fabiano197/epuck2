@@ -13,5 +13,6 @@ void gpio_set(GPIO_TypeDef *port, unsigned int pin);
 void gpio_clear(GPIO_TypeDef *port, unsigned int pin);
 void gpio_toggle(GPIO_TypeDef *port, unsigned int pin);
 bool gpio_read(GPIO_TypeDef *port, unsigned int pin);
+bool gpio_is_set(GPIO_TypeDef *port, unsigned int pin);
 
 #endif /* GPIO_H */

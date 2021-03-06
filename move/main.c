@@ -34,9 +34,13 @@ int main(void)
     gpio_clear(FRONT_LED);
 
     motor_init();
-    motor_set_position(4, 4, 3.0, 3.0);
-    delay_seconds(5);
-    motor_set_position(8, 8, 3, 3);
+    motor_set_position(10, 10, 5, 5);
+    delay_seconds(10);
+    motor_set_position(10, 10, 5, 5);
+
+    //motor_set_position(4, 4, 3.0, 3.0);
+    //delay_seconds(5);
+    //motor_set_position(8, 8, 3, 3);
 
     //gpio_config_output_af_pushpull(FRONT_LED);
     //gpio_config_select_af(FRONT_LED, 2);

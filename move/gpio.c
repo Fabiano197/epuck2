@@ -111,3 +111,10 @@ bool gpio_read(GPIO_TypeDef *port, unsigned int pin)
 }
 
 
+bool gpio_is_set(GPIO_TypeDef *port, unsigned int pin)
+{
+	if (port->ODR & (1<<pin)) return true;
+	else return false;
+}
+
+
