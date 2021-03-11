@@ -33,10 +33,10 @@ int main(void)
     gpio_config_output_opendrain(FRONT_LED);
     gpio_clear(FRONT_LED);
 
-    motor_init();
-    motor_set_position(10, 10, 5, 5);
-    delay_seconds(10);
-    motor_set_position(10, 10, 5, 5);
+    //motor_init();
+    //motor_set_speed(13, 13);
+    //delay_seconds(10);
+    //motor_set_position(10, 10, 5, 5);
 
     //motor_set_position(4, 4, 3.0, 3.0);
     //delay_seconds(5);

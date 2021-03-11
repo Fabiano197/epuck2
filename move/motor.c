@@ -190,7 +190,7 @@ void motor_set_speed(float speed_r, float speed_l)
 	target_pos_left = 10000;
 	target_pos_right = 10000;
 	//check if the given speed doesn't exceed the speed limit
-	if(speed_r < MOTOR_SPEED_LIMIT && speed_l < MOTOR_SPEED_LIMIT){
+	if(speed_r <= MOTOR_SPEED_LIMIT && speed_l <= MOTOR_SPEED_LIMIT){
 		MOTOR_RIGHT_TIMER->ARR = TIMER_FREQ * WHEEL_PERIMETER / (NSTEP_ONE_TURN * speed_r);
 		MOTOR_LEFT_TIMER->ARR  = TIMER_FREQ * WHEEL_PERIMETER / (NSTEP_ONE_TURN * speed_l);
 	}
