@@ -8,6 +8,11 @@
 
 #define NB_SAMPLES_OFFSET     200
 
+ #define max(a,b) \
+   ({ __typeof__ (a) _a = (a); \
+       __typeof__ (b) _b = (b); \
+     _a > _b ? _a : _b; })
+
 messagebus_t bus;
 MUTEX_DECL(bus_lock);
 CONDVAR_DECL(bus_condvar);
@@ -129,10 +134,23 @@ void show_gravity(imu_msg_t *imu_values){
     */
     time = GPTD11.tim->CNT;
     chSysUnlock();
-
-    /*
-    *   TASK 11 : TO COMPLETE
-    */
+    palSetPad(GPIOD, GPIOD_LED1);
+    palSetPad(GPIOD, GPIOD_LED3);
+    palSetPad(GPIOD, GPIOD_LED5);
+    palSetPad(GPIOD, GPIOD_LED7);
+    float max_acc = max(fabs(imu_values->acceleration[X_AXIS]), fabs(imu_values->acceleration[Y_AXIS]));
+    if(max_acc < 1.5){
+        palClearPad(GPIOD, GPIOD_LED1);
+        palClearPad(GPIOD, GPIOD_LED3);
+        palClearPad(GPIOD, GPIOD_LED5);
+        palClearPad(GPIOD, GPIOD_LED7);
+    }
+    else{
+    	if(fabs(max_acc - imu_values->acceleration[X_AXIS]) < 1.5) palClearPad(GPIOD, GPIOD_LED7);
+    	if(fabs(max_acc + imu_values->acceleration[X_AXIS]) < 1.5) palClearPad(GPIOD, GPIOD_LED3);
+    	if(fabs(max_acc - imu_values->acceleration[Y_AXIS]) < 1.5) palClearPad(GPIOD, GPIOD_LED5);
+    	if(fabs(max_acc + imu_values->acceleration[Y_AXIS]) < 1.5) palClearPad(GPIOD, GPIOD_LED1);
+    }
 
 }
 
@@ -153,8 +171,8 @@ int main(void)
     /*
     *   TASKS 3,4,5,6,7 : UNDERSTANDING THREADS ON CHIBIOS
     */
-    chThdCreateStatic(waThdFrontLed, sizeof(waThdFrontLed), NORMALPRIO+1, ThdFrontLed, NULL);
-    chThdCreateStatic(waThdBodyLed, sizeof(waThdBodyLed), NORMALPRIO, ThdBodyLed, NULL);
+//    chThdCreateStatic(waThdFrontLed, sizeof(waThdFrontLed), NORMALPRIO+1, ThdFrontLed, NULL);
+//    chThdCreateStatic(waThdBodyLed, sizeof(waThdBodyLed), NORMALPRIO, ThdBodyLed, NULL);
 
     //to change the priority of the thread invoking the function. The main function in this case
     //chThdSetPriority(NORMALPRIO+2);
@@ -190,7 +208,7 @@ int main(void)
                 imu_values.status);
        
         show_gravity(&imu_values);
-        chThdSleepMilliseconds(500);
+        chThdSleepMilliseconds(100);
     }
 
 }

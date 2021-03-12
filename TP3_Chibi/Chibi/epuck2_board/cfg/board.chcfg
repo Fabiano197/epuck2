@@ -457,7 +457,7 @@
       <pin5
         ID="LED1"
         Type="PushPull"
-        Level="Low"
+        Level="HIGH"
         Speed="Maximum"
         Resistor="Floating"
         Mode="Output"

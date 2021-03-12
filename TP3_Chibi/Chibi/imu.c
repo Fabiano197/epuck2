@@ -22,9 +22,10 @@ static bool imu_configured = false;
  * 			RAW gyroscope to rad/s speed
  */
 void imu_compute_units(void){
-	/*
-    *   TASK 10 : TO COMPLETE
-    */
+	for(uint8_t i = 0; i < 3; i++){
+		imu_values.acceleration[i] = 2*STANDARD_GRAVITY*(imu_values.acc_raw[i]-imu_values.acc_offset[i])/INT16_MAX;
+		imu_values.gyro_rate[i] = DEG2RAD(250.0*(imu_values.gyro_raw[i]-imu_values.gyro_offset[i])/INT16_MAX);
+	}
 }
 
  /**
@@ -96,9 +97,18 @@ void imu_stop(void) {
 }
 
 void imu_compute_offset(messagebus_topic_t * imu_topic, uint16_t nb_samples){
+	int32_t acc_tot[NB_AXIS] = {0, 0, 0};
+	int32_t gyro_tot[NB_AXIS] = {0, 0, 0};
 	for(uint16_t sample = 0; sample<nb_samples; sample++){
-
-		messagebus_topic_wait(imu_topic);
+		messagebus_topic_wait(imu_topic, &imu_values, sizeof(imu_values));
+		for(uint8_t i = 0; i < 3; i++){
+			gyro_tot[i] += imu_values.gyro_raw[i];
+			acc_tot[i] += imu_values.acc_raw[i];
+		}
+	}
+	for(uint8_t i = 0; i < 3; i++){
+		imu_values.acc_offset[i] = acc_tot[i]/nb_samples;
+		imu_values.gyro_offset[i] = gyro_tot[i]/nb_samples;
 	}
 }
 
