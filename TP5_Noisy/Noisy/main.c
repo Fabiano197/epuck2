@@ -17,7 +17,7 @@
 #include <arm_math.h>
 
 //uncomment to send the FFTs results from the real microphones
-//#define SEND_FROM_MIC
+#define SEND_FROM_MIC
 
 //uncomment to use double buffering to send the FFT to the computer
 #define DOUBLE_BUFFERING
@@ -78,6 +78,7 @@ int main(void)
 
     /* Infinite loop. */
     while (1) {
+
 #ifdef SEND_FROM_MIC
         //waits until a result must be sent to the computer
         wait_send_to_computer();
@@ -95,11 +96,36 @@ int main(void)
 
         uint16_t size = ReceiveInt16FromComputer((BaseSequentialStream *) &SD3, bufferCmplxInput, FFT_SIZE);
 
+        static complex_float bufferCmplxInputConverted[FFT_SIZE];
+        static complex_float* bufferCmplxInputPointer = &bufferCmplxInputConverted[0];
+        float* loop_ptr = bufferCmplxInput;
+
+        for(uint16_t i = 0; i < FFT_SIZE; i++){
+        	bufferCmplxInputConverted[i].real = *loop_ptr;
+        	loop_ptr++;
+        	bufferCmplxInputConverted[i].imag = *loop_ptr;
+        	loop_ptr++;
+        }
+
         if(size == FFT_SIZE){
 
-            doFFT_optimized(FFT_SIZE, bufferCmplxInput);
 
+            doFFT_optimized(FFT_SIZE, bufferCmplxInput);
+            //doFFT_c(FFT_SIZE, bufferCmplxInputPointer);
+
+
+            loop_ptr = bufferCmplxInput;
+            for(uint16_t i = 0; i < FFT_SIZE; i++){
+            	*loop_ptr = bufferCmplxInputConverted[i].real;
+            	loop_ptr++;
+            	*loop_ptr = bufferCmplxInputConverted[i].imag;
+            	loop_ptr++;
+			}
+
+            systime_t time_start = chVTGetSystemTime();
             arm_cmplx_mag_f32(bufferCmplxInput, bufferOutput, FFT_SIZE);
+			systime_t time_stop = chVTGetSystemTime();
+			chprintf((BaseSequentialStream *)&SDU1, "Time = %i ms \r\n", time_stop-time_start);
 
             SendFloatToComputer((BaseSequentialStream *) &SD3, bufferOutput, FFT_SIZE);
 
