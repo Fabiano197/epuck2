@@ -18,3 +18,7 @@
 *.map
 
 *.xml
+
+Scripts_python/
+
+lib/
