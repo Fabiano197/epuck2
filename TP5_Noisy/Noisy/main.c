@@ -96,16 +96,16 @@ int main(void)
 
         uint16_t size = ReceiveInt16FromComputer((BaseSequentialStream *) &SD3, bufferCmplxInput, FFT_SIZE);
 
-        static complex_float bufferCmplxInputConverted[FFT_SIZE];
-        static complex_float* bufferCmplxInputPointer = &bufferCmplxInputConverted[0];
-        float* loop_ptr = bufferCmplxInput;
+        //static complex_float bufferCmplxInputConverted[FFT_SIZE];
+        //static complex_float* bufferCmplxInputPointer = &bufferCmplxInputConverted[0];
+        //float* loop_ptr = bufferCmplxInput;
 
-        for(uint16_t i = 0; i < FFT_SIZE; i++){
+        /*for(uint16_t i = 0; i < FFT_SIZE; i++){
         	bufferCmplxInputConverted[i].real = *loop_ptr;
         	loop_ptr++;
         	bufferCmplxInputConverted[i].imag = *loop_ptr;
         	loop_ptr++;
-        }
+        }*/
 
         if(size == FFT_SIZE){
 
@@ -114,18 +114,15 @@ int main(void)
             //doFFT_c(FFT_SIZE, bufferCmplxInputPointer);
 
 
-            loop_ptr = bufferCmplxInput;
-            for(uint16_t i = 0; i < FFT_SIZE; i++){
+            //loop_ptr = bufferCmplxInput;
+            /*for(uint16_t i = 0; i < FFT_SIZE; i++){
             	*loop_ptr = bufferCmplxInputConverted[i].real;
             	loop_ptr++;
             	*loop_ptr = bufferCmplxInputConverted[i].imag;
             	loop_ptr++;
-			}
+			}*/
 
-            systime_t time_start = chVTGetSystemTime();
             arm_cmplx_mag_f32(bufferCmplxInput, bufferOutput, FFT_SIZE);
-			systime_t time_stop = chVTGetSystemTime();
-			chprintf((BaseSequentialStream *)&SDU1, "Time = %i ms \r\n", time_stop-time_start);
 
             SendFloatToComputer((BaseSequentialStream *) &SD3, bufferOutput, FFT_SIZE);
 
