@@ -96,29 +96,33 @@ void processAudioData(int16_t* data, uint16_t num_samples){
 
 void command_motor(void){
 	uint16_t peak = 0;
-	for(int i = 0; i < FFT_SIZE; i++){
+	uint32_t average = 0;
+	for(uint16_t i = 0; i < FFT_SIZE; i++){
+		average = average + micLeft_output[i];
 		if(micLeft_output[peak]< micLeft_output[i]) peak = i;
 	}
-	left_motor_set_speed(0);
-	right_motor_set_speed(0);
-	if(micLeft_output[peak] < 20000)return;
-	float frequency = 8000.0/512.0*(512-abs(peak-512));
-	//chprintf((BaseSequentialStream *)&SDU1, "%Frequency =%.2f \r\n", frequency);
-	if(frequency >500 && frequency <1500){
-		left_motor_set_speed(1000);
-		right_motor_set_speed(1000);
+	if(micLeft_output[peak] < average/50){
+		left_motor_set_speed(0);
+		right_motor_set_speed(0);
+		return;
 	}
-	else if(frequency >1500 && frequency <2500){
-		left_motor_set_speed(-1000);
-		right_motor_set_speed(-1000);
+	uint16_t frequency = 16*(512-abs(peak-512));
+	//chprintf((BaseSequentialStream *)&SDU1, "%Frequency =%.2d \r\n %Average =%.2d \r\n\n", frequency, average);
+	if(frequency >500 && frequency <=1000){
+		left_motor_set_speed(200);
+		right_motor_set_speed(200);
 	}
-	else if(frequency >2500 && frequency <3500){
-		left_motor_set_speed(-1000);
-		right_motor_set_speed(1000);
+	else if(frequency > 1000 && frequency <=1500){
+		left_motor_set_speed(-200);
+		right_motor_set_speed(-200);
 	}
-	else if(frequency >3500 && frequency <4500){
-		left_motor_set_speed(1000);
-		right_motor_set_speed(-1000);
+	else if(frequency >1500 && frequency <=2000){
+		left_motor_set_speed(-200);
+		right_motor_set_speed(200);
+	}
+	else if(frequency >2000 && frequency <2500){
+		left_motor_set_speed(200);
+		right_motor_set_speed(-200);
 	}
 }
 
