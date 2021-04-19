@@ -1,0 +1,6 @@
+Threads:
+ - IR data collection and processing
+ - motor control
+ - com to computer
+ - data processing algorithm
+ - data of IMU
