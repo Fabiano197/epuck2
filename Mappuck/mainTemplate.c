@@ -31,7 +31,6 @@
 #include "i2c_bus.h"
 #include "ir_remote.h"
 #include "leds.h"
-#include <main.h>
 #include "memory_protection.h"
 #include "motors.h"
 #include "sdio.h"
@@ -39,6 +38,7 @@
 #include "spi_comm.h"
 #include "usbcfg.h"
 #include "communication.h"
+#include "main.h"
 #include "uc_usage.h"
 
 #define SHELL_WA_SIZE   THD_WORKING_AREA_SIZE(2048)
