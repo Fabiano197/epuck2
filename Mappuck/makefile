@@ -3,13 +3,18 @@
 #Simply adapt the lines below to be able to compile
 
 # Define project name here
-PROJECT = Project
+PROJECT = Mappuck
 
 #Define path to the e-puck2_main-processor folder
 GLOBAL_PATH = ../lib/e-puck2_main-processor
 
 #Source files to include
 CSRC += ./main.c \
+		./communication.c \
+		./control.c \
+		./efk.c \
+		./landmarks.c \
+		./measurements.c \
 
 #Header folders to include
 INCDIR += 
