@@ -2,6 +2,9 @@
 #define CONTROL_H
 
 #include <hal.h>
+#include <math.h>
+#include "measurements.h"
+#include "motors.h"
 
 /**
 * @brief

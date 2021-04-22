@@ -5,10 +5,17 @@
 
 //Measurements needed for feedback
 typedef struct {
-	int16_t tof_distance_front; //mm
-	int16_t proximity_distance_right; //mm
+	uint16_t tof_distance_front; //mm
+	uint16_t proximity_distance_right; //mm
 	float inclination; //rad
 } measurements_msg_t;
+
+typedef struct Position{
+	int16_t x;
+	int16_t y;
+	int16_t z;
+	float theta;
+} Position_t;
 
 
 /**
@@ -28,13 +35,13 @@ void measurements_stop(void);
 * @brief   returns the distance in the front
 *
 */
-int16_t get_tof_distance(void);
+uint16_t get_tof_distance(void);
 
 /**
 * @brief   returns the distance on the right of the epuck
 *
 */
-int16_t get_proximity_distance(void);
+uint16_t get_proximity_distance(void);
 
 /**
 * @brief   returns the inclination

@@ -1,6 +1,7 @@
 #include <ch.h>
 #include <hal.h>
 #include <main.h>
+#include <math.h>
 
 #include "sensors/imu.h"
 #include "sensors/mpu9250.h"
@@ -38,18 +39,26 @@ void measurements_start(void){
 
 
 void measurements_stop(void){
-	proximity_stop();
 	imu_stop();
 	VL53L0X_stop();
 	//To be completed
 }
 
-int16_t get_tof_distance(void){
-	//To be completed
+uint16_t get_tof_distance(void){
+	return VL53L0X_get_dist_mm();
 }
 
-int16_t get_proximity_distance(void){
-	//To be completed
+uint16_t get_proximity_distance(void){
+	int prox = 0;
+	for(uint8_t i=0; i<10; i++){
+		prox += get_prox(2);
+		chThdSleepMilliseconds(20);
+	}
+	prox /= 10;
+	if(prox == 0){
+		prox = 1;
+	}
+	return (uint16_t)(sqrt(50000/prox)); //empirical formula to convert from IR intensity to distance
 }
 
 float get_inclination(void){
