@@ -13,7 +13,7 @@ static THD_FUNCTION(imu_reader_thd, arg) {
 
 void print_position_USB(Position_t pos)
 {
-    chprintf((BaseSequentialStream *)&SDU1, "Position: x= %i\t y= %i\t z= %i\t theta= %f \n\r", pos.x, pos.y, pos.z, pos.theta);
+    chprintf((BaseSequentialStream *)&SDU1, "Position: x= %i\t y= %i\t z= %i\t theta= %f\t phi= %f \n\r", pos.x, pos.y, pos.z, pos.theta, pos.phi);
 }
 
 void send_data_Bluetooth(pos_landmarks_msg_t message)

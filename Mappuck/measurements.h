@@ -15,6 +15,7 @@ typedef struct Position{
 	int16_t y;
 	int16_t z;
 	float theta;
+	float phi;
 } Position_t;
 
 

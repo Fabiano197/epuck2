@@ -7,7 +7,7 @@
 
 static int32_t old_pos_left = 0;
 static int32_t old_pos_right = 0;
-static Position_t current_pos = {0,0,0,0};
+static Position_t current_pos = {0,0,0,0,0};
 
 void control_init(void){
 	motors_init();
@@ -39,6 +39,7 @@ static Position_t make_step(Position_t old_pos)
 	new_pos.y = old_pos.y + dist_steps*sinus(old_pos.theta);
 	new_pos.z = old_pos.z;
 	new_pos.theta = old_pos.theta + arctan((float)(new_pos_right-old_pos_right-new_pos_left+old_pos_left)/WHEEL_FULLDIST_STEP);
+	new_pos.phi = old_pos.phi;
 	if(new_pos.theta >= TWOPI) {new_pos.theta -= TWOPI;}
 
 	old_pos_left  = new_pos_left;
