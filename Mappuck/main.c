@@ -3,15 +3,17 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <i2c_bus.h>
 
 #include "ch.h"
 #include "chprintf.h"
 #include "hal.h"
 #include "shell.h"
-
 #include "cmd.h"
 #include "memory_protection.h"
 #include "communication.h"
+#include "spi_comm.h"
+#include "usbcfg.h"
 
 //Custom Includes
 #include "measurements.h"
@@ -32,12 +34,19 @@ int main(void)
     mpu_init();
 
 
-    // Init the peripherals.
-    measurements_start();
+    // Init custom libraries.
+    communications_init();
+    ekf_init();
+    //measurements_start();
 
+    for(uint16_t i = 0; i < 50; i++){
+        landmark_t test = {100-i, 2*i, 100-10*i};
+        find_landmark(test);
+    }
 
     /* Infinite loop. */
     while (1) {
+
     }
 
 }

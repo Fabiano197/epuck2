@@ -4,6 +4,7 @@
 #define TWOPI 6.2831853
 #define SAMPLE_PERIODE 5 // [ms]
 #define PRINT_PERIODE 500 // [ms]
+#define WHEEL_FULLDIST_STEP 50
 
 static int32_t old_pos_left = 0;
 static int32_t old_pos_right = 0;

@@ -1,8 +1,14 @@
 #ifndef LANDMARKS_H
 #define LANDMARKS_H
 
+#include <ch.h>
+#include <hal.h>
+#include <main.h>
+#include <math.h>
+
 #define WALL INT16_MIN
 #define PROXIMITYRADIUS 50 //Proxmity Radius in mm
+#define NB_LANDMARK_MAX 200
 
 //Landmarks
 typedef struct {
