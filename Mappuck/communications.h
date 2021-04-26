@@ -6,7 +6,11 @@
 /**
 * @brief Starts Bluetooth communication with computer
 */
-void communication_init(void);
+void communications_init(void);
 
+/**
+* @brief Stops Bluetooth communication with computer
+*/
+void communications_stop(void);
 
 #endif

@@ -10,9 +10,12 @@ static landmark_t landmarks[NB_LANDMARK_MAX];
 int16_t find_landmark(landmark_t coordinates){
 	landmarks[N] = coordinates;
 	N++;
-	return N;
+	return -1;
 }
 
+landmark_t get_landmark(int16_t i){
+	return landmarks[i];
+}
 
 landmark_t* get_landmark_ptr(void){
 	return &landmarks[0];

@@ -8,7 +8,7 @@
 
 #define WALL INT16_MIN
 #define PROXIMITYRADIUS 50 //Proxmity Radius in mm
-#define NB_LANDMARK_MAX 200
+#define NB_LANDMARK_MAX 600
 
 //Landmarks
 typedef struct {
@@ -28,7 +28,7 @@ int16_t find_landmark(landmark_t coordinates);
 /**
 * @brief Returns the ith landmark (if it exists), otherwise the function returns landmark with x, y, z = WALL
 */
-landmark_t get_landmark(int16_t);
+landmark_t get_landmark(int16_t i);
 
 /**
 * @brief Returns pointer to first landmark
