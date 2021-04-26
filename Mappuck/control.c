@@ -1,50 +1,71 @@
 #include "control.h"
 
-#define PI    3.1415927
-#define TWOPI 6.2831853
-#define SAMPLE_PERIODE 5 // [ms]
-#define PRINT_PERIODE 500 // [ms]
-#define WHEEL_FULLDIST_STEP 50
+#define MOTORSPEED 200
 
-static int32_t old_pos_left = 0;
-static int32_t old_pos_right = 0;
-static Position_t current_pos = {0,0,0,0,0};
+static thread_t *controlThd;
+static bool control_configured = false;
+
+static control_command_t target_u;
+static bool motor_running = false;
+
+static binary_semaphore_t job_available_bsem;
+static binary_semaphore_t motor_running_bsem;
+
+static THD_WORKING_AREA(waControl, 512);
+
+static THD_FUNCTION(control_thd, arg) {
+	(void) arg;
+	chRegSetThreadName(__FUNCTION__);
+
+	while(chThdShouldTerminateX() == false){
+		chBSemWait(&job_available_bsem);
+		motor_running = true;
+		if(target_u.angle < 0){
+			right_motor_set_speed(MOTORSPEED);
+			left_motor_set_speed(-MOTORSPEED);
+			chThdSleepMilliseconds((uint16_t)(-target_u.angle*207000/MOTORSPEED));
+		}
+		if(target_u.angle > 0){
+			right_motor_set_speed(-MOTORSPEED);
+			left_motor_set_speed(MOTORSPEED);
+			chThdSleepMilliseconds((uint16_t)(target_u.angle*207000/MOTORSPEED));
+		}
+		if(target_u.dist > 0){
+			right_motor_set_speed(MOTORSPEED);
+			left_motor_set_speed(MOTORSPEED);
+			chThdSleepMilliseconds(target_u.dist*7576/MOTORSPEED);
+		}
+		right_motor_set_speed(0);
+		left_motor_set_speed(0);
+		motor_running = false;
+		chBSemSignal(&motor_running_bsem);
+     }
+}
+
+
+/****************************PUBLIC FUNCTIONS*************************************/
 
 void control_init(void){
 	motors_init();
+	if(control_configured)return;
+	chBSemObjectInit(&motor_running_bsem, false);
+	chBSemObjectInit(&job_available_bsem, true);
+	controlThd = chThdCreateStatic(waControl, sizeof(waControl), NORMALPRIO+4, control_thd, NULL);
+	control_configured = true;
 }
 
-static int16_t sinus(int16_t value)
-{
-	return value - value*value*value/6 + value*value*value*value*value/120;
+void control_stop(void){
+	if(!control_configured)return;
+	control_configured = false;
+	chThdTerminate(controlThd);
 }
 
-static int16_t cosinus(int16_t value)
-{
-	return 1 - value*value/4 + value*value*value*value/24;
+void make_step(control_command_t u){
+	chBSemWait(&motor_running_bsem);
+	target_u = u;
+	chBSemSignal(&job_available_bsem);
 }
 
-static float arctan(int16_t value)
-{
-	return (float)(value - value*value*value/3 + value*value*value*value*value/5);
-}
-
-static Position_t make_step(Position_t old_pos)
-{
-	int32_t new_pos_left  = left_motor_get_pos();
-	int32_t new_pos_right = right_motor_get_pos();
-	int32_t dist_steps = (new_pos_left + new_pos_right - old_pos_left - old_pos_right)/2;
-
-	Position_t new_pos;
-	new_pos.x = old_pos.x + dist_steps*cosinus(old_pos.theta);
-	new_pos.y = old_pos.y + dist_steps*sinus(old_pos.theta);
-	new_pos.z = old_pos.z;
-	new_pos.theta = old_pos.theta + arctan((float)(new_pos_right-old_pos_right-new_pos_left+old_pos_left)/WHEEL_FULLDIST_STEP);
-	new_pos.phi = old_pos.phi;
-	if(new_pos.theta >= TWOPI) {new_pos.theta -= TWOPI;}
-
-	old_pos_left  = new_pos_left;
-	old_pos_right = new_pos_right;
-
-	return new_pos;
+bool motor_is_running(void){
+	return motor_running;
 }

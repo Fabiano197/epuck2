@@ -7,6 +7,9 @@
 #include "communications.h"
 #include "ekf.h"
 
+static thread_t *comThd;
+static bool com_configured = false;
+
 void send_data_Bluetooth(void){
 	uint16_t N = get_nb_landmarks();
 	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)"START", 5);
@@ -21,10 +24,11 @@ void send_data_Bluetooth(void){
 }
 
 static THD_WORKING_AREA(waCommunication, 512);
+
 static THD_FUNCTION(communication_thd, arg) {
 	chRegSetThreadName(__FUNCTION__);
 	(void) arg;
-	while(1){
+	while(chThdShouldTerminateX() == false){
 		send_data_Bluetooth();
 		chThdSleepMilliseconds(1000);
 	}
@@ -33,6 +37,7 @@ static THD_FUNCTION(communication_thd, arg) {
 /****************************PUBLIC FUNCTIONS*************************************/
 
 void communications_init(void){
+	if(com_configured)return;
 	static SerialConfig ser_cfg = {
 	    115200,
 	    0,
@@ -40,5 +45,13 @@ void communications_init(void){
 	    0,
 	};
 	sdStart(&SD3, &ser_cfg); // UART3.
-	chThdCreateStatic(waCommunication, sizeof(waCommunication), NORMALPRIO, communication_thd, NULL);
+
+	comThd = chThdCreateStatic(waCommunication, sizeof(waCommunication), NORMALPRIO+1, communication_thd, NULL);
+	com_configured = true;
+}
+
+void communication_stop(void){
+	if(!com_configured)return;
+	com_configured = false;
+	chThdTerminate(comThd);
 }
