@@ -82,27 +82,3 @@ void measurements_stop(void){
 	measurements_configured = false;
 	chThdTerminate(measurementsThd);
 }
-
-uint16_t get_tof_distance(void){
-	return VL53L0X_get_dist_mm();
-}
-
-uint16_t get_proximity_distance(void){
-	int prox = 0;
-	for(uint8_t i=0; i<10; i++){
-		prox += get_prox(2);
-		chThdSleepMilliseconds(20);
-	}
-	prox /= 10;
-	if(prox == 0){
-		prox = 1;
-	}
-	return (uint16_t)(sqrt(50000/prox)); //empirical formula to convert from IR intensity to distance
-}
-
-float get_inclination(void){
-	float acc_x = get_acceleration(0);
-	float acc_y = get_acceleration(1);
-	float acc_z = get_acceleration(2);
-	float acc_plane = sqrt(acc_x*acc_x + acc_y*acc_y);
-	return atan(acc_plane/acc_z);

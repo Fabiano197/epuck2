@@ -65,11 +65,11 @@ def readUint8Serial(port):
     position = struct.unpack('hhhff', port.read(16))
     print(position)
     landmark = [0]*N
-    green = 0;
+    green = 0
     for i in range(N):
         landmark[i] = struct.unpack('hhh', port.read(6))
-        print(landmark[i][0], " ", landmark[i][1], " ", landmark[i][2])
     for i in range(N):
+        print(landmark[i][0], " ", landmark[i][1], " ", landmark[i][2])
         if(green == 0):
             plt.scatter(landmark[i][0], landmark[i][1], color = 'green')
         if(green==1):

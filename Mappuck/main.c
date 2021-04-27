@@ -29,7 +29,6 @@ int main(void)
     measurements_start();
     control_init();
     communications_init();
-
     /* Infinite loop. */
     while (1) {
     }

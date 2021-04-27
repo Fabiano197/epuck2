@@ -23,17 +23,17 @@ static THD_FUNCTION(control_thd, arg) {
 		if(target_u.angle < 0){
 			right_motor_set_speed(MOTORSPEED);
 			left_motor_set_speed(-MOTORSPEED);
-			chThdSleepMilliseconds((uint16_t)(-target_u.angle*207000/MOTORSPEED));
+			chThdSleepMilliseconds((uint16_t)(-target_u.angle*208100/MOTORSPEED+1));
 		}
 		if(target_u.angle > 0){
 			right_motor_set_speed(-MOTORSPEED);
 			left_motor_set_speed(MOTORSPEED);
-			chThdSleepMilliseconds((uint16_t)(target_u.angle*207000/MOTORSPEED));
+			chThdSleepMilliseconds((uint16_t)(target_u.angle*208100/MOTORSPEED+1));
 		}
 		if(target_u.dist > 0){
 			right_motor_set_speed(MOTORSPEED);
 			left_motor_set_speed(MOTORSPEED);
-			chThdSleepMilliseconds(target_u.dist*7576/MOTORSPEED);
+			chThdSleepMilliseconds(target_u.dist*7950/MOTORSPEED+1);
 		}
 		right_motor_set_speed(0);
 		left_motor_set_speed(0);

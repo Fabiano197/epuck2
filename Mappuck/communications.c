@@ -30,7 +30,7 @@ static THD_FUNCTION(communication_thd, arg) {
 	(void) arg;
 	while(chThdShouldTerminateX() == false){
 		send_data_Bluetooth();
-		chThdSleepMilliseconds(1000);
+		chThdSleepMilliseconds(2000);
 	}
 }
 

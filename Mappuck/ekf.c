@@ -52,6 +52,7 @@ void set_landmarks(void){
 	find_landmark(l);
 	l.x = pos.x;
 	l.y = pos.y;
+	l.z = pos.z;
 	find_landmark(l);
 }
 
