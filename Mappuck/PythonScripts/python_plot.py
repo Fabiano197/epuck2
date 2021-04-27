@@ -66,6 +66,9 @@ def readUint8Serial(port):
     print(position)
     landmark = [0]*N
     green = 0
+    x = []
+    y = []
+    z = []
     for i in range(N):
         landmark[i] = struct.unpack('hhh', port.read(6))
     for i in range(N):
@@ -75,9 +78,12 @@ def readUint8Serial(port):
         if(green==1):
             plt.scatter(landmark[i][0], landmark[i][1], color = 'blue')
         if(green==2):
-            plt.scatter(landmark[i][0], landmark[i][1], color = 'yellow')
+            x.append(landmark[i][0])
+            y.append(landmark[i][1])
+            z.append(landmark[i][2])
         green+=1
         green %=3
+    plt.scatter(x, y, c = z, cmap ='autumn')
     plt.show()
 
 

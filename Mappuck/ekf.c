@@ -31,6 +31,7 @@ void calculate_u(void){
 
 void estimate_pos(void){
 	pos.phi += u.angle;
+	pos.theta = measurements_values.inclination;
 	if(pos.phi > PI){
 		pos.phi-=2*PI;
 	}
@@ -39,6 +40,7 @@ void estimate_pos(void){
 	}
 	pos.x = pos.x + u.dist*cos(pos.phi);
 	pos.y = pos.y + u.dist*sin(pos.phi);
+	pos.z = pos.z + u.dist*sin(pos.theta);
 }
 
 void set_landmarks(void){
@@ -74,6 +76,8 @@ static THD_FUNCTION(efk_thd, arg) {
 		 make_step(u);
 		 set_landmarks();
 		 estimate_pos();
+
+		 //For measurements debugging only
 		 /*pos.x = measurements_values.proximity_distance_northeast;
 		 pos.y = measurements_values.proximity_distance_east;
 		 pos.z = measurements_values.tof_distance_front;

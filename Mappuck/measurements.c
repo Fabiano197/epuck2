@@ -29,11 +29,9 @@ uint16_t get_proximity_distance(uint8_t sensor){
 }
 
 float get_inclination(void){
-	float acc_x = get_acceleration(0);
-	float acc_y = get_acceleration(1);
-	float acc_z = get_acceleration(2);
-	float acc_plane = sqrt(acc_x*acc_x + acc_y*acc_y);
-	return atan(acc_plane/acc_z);
+	float acc_y = get_acc_filtered(1, 3);
+	float acc_z = get_acc_filtered(2, 3);
+	return atan(-acc_y/acc_z);
 }
 
 static THD_WORKING_AREA(waMeasurements, 512);
