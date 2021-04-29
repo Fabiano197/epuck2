@@ -6,25 +6,32 @@ import signal
 import time
 from threading import Thread
 
-size_uint16 = 2
-size_float = 4
+size_int16 = 2
+size_float = 5
 
-#pos_file = open("D:\\_EPFL\\_Robotique\\epuck2\\Project\\pos_file.txt", "r")
+data_file = open("D:\\_EPFL\\_Robotique\\epuck2\\Mappuck\\PythonScripts\\testdata1.txt", "r")
 
 # the structure for a position
 class Position:
-    def __init__(self, x, y, z, theta, phi):
+    def __init__(self, x, y, z, phi, theta):
         self.x = x
         self.y = y
         self.z = z
-        self.theta = theta
         self.phi = phi
+        self.theta = theta
+
+    def print(self):
+        print("Current position: x= " + self.x + ", y=" + self.y + ", z= " + self.z + "")
+
+current_pos = Position(0, 0, 0, 0.0, 0.0)
 
 class Landmark:
     def __init__(self, x, y, z):
         self.x = x
         self.y = y
         self.z = z
+
+
 
 #handler when closing the window
 def handle_close(evt):
@@ -80,32 +87,31 @@ def readMessageSerial(port):
         #update the state
         state = read_START(c1, state)
 
-        
-    
     # read the number of landmarks
-    nb_lm = struct.unpack('<H', port.read(size_uint16))
-    nb_lm = nb_lm[0]
+    N = struct.unpack('H', port.read(size_int16))
+    N = N[0]
+    print(N)
 
     # read the current position of the robot
-    current_pos = Position(0, 0, 0, 0.0, 0.0)
-    current_pos.x, current_pos.y, current_pos.z  = struct.unpack('HHH', port.read(3*size_uint16))
-    current_pos.theta, current_pos.phi = struct.unpack('ff',  port.read(2*size_float))
+    current_pos.x, current_pos.y, current_pos.z  = struct.unpack('hhh', port.read(3*size_int16))
+    current_pos.phi, current_pos.theta = struct.unpack('ff',  port.read(2*size_float))
+    current_pos.print()
 
-    # read the nb_lm landmarks
-    landmark_buffer = port.read(nb_lm * size_uint16 * 3)
+    # read the N landmarks
+    landmark_buffer = port.read(N * size_int16 * 3)
     landmarks_list = []
 
     #if we receive the good amount of data, convert them into landmarks
-    if(len(landmark_buffer) == nb_lm * size_uint16 * 3):
-        for i in range(nb_lm):
-            x,y,z = struct.unpack_from('hhh', landmark_buffer, i*size_uint16*3)
+    if(len(landmark_buffer) == N * size_int16 * 3):
+        for i in range(N):
+            x,y,z = struct.unpack_from('hhh', landmark_buffer, i*size_int16*3)
             landmarks_list.append(Landmark(x,y,z))
 
         print('received Landmarks!')
-        return landmarks_list
+        return
     else:
         print('Timout...')
-        return []
+        return
 
 #thread used to control the communication part
 class serial_thread(Thread):
@@ -136,11 +142,11 @@ class serial_thread(Thread):
                 time.sleep(0.01)
             self.port.close()
 
-        
+
 #test if the serial port has been given as argument in the terminal
 if len(sys.argv) == 1:
-    print('Please give the serial port to use as argument')
-    sys.exit(0)
+   print('Please give the serial port to use as argument')
+   sys.exit(0)
 
 #serial reader thread config
 #begins the serial thread
