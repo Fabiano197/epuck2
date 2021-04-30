@@ -20,7 +20,7 @@ typedef struct {
 typedef struct {
 	float angle;
 	uint16_t dist;
-} controll_command_t;
+} control_command_t;
 
 /**
 * @brief Initializes EFK

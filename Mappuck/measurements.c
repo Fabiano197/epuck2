@@ -18,17 +18,17 @@ static measurements_msg_t measurements_values = {0,0,0,0,0};
 static thread_t *measurementsThd;
 static bool measurements_configured = false;
 
-uint16_t get_tof_distance(void){
+static uint16_t get_tof_distance(void){
 	return VL53L0X_get_dist_mm()-52 ; //remove offset
 }
 
-uint16_t get_proximity_distance(uint8_t sensor){
+static uint16_t get_proximity_distance(uint8_t sensor){
 	uint16_t dist = (uint16_t)(sqrt(200000/get_calibrated_prox(sensor))); //empirical formula to convert from IR intensity to distance
-	if(dist == 0)dist = 255;
+	if(dist == 0) dist = 255;
 	return dist;
 }
 
-float get_inclination(void){
+static float get_inclination(void){
 	float acc_y = get_acc_filtered(1, 3);
 	float acc_z = get_acc_filtered(2, 3);
 	return atan(-acc_y/acc_z);

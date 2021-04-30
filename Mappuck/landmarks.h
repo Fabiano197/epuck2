@@ -6,15 +6,16 @@
 #include <main.h>
 #include <math.h>
 
-#define WALL INT16_MIN
+#define TOF INT16_MIN
+#define IR  INT16_MAX
 #define PROXIMITYRADIUS 50 //Proxmity Radius in mm
-#define NB_LANDMARK_MAX 600
+#define NB_LANDMARK_MAX 1500
 
 //Landmarks
 typedef struct {
 	int16_t x; //mm
 	int16_t y; //mm
-	int16_t z; //mm, if z = WALL -> landmark is wall
+	int16_t z; //mm, if z = TOF or IR -> landmark is wall
 
 } landmark_t;
 

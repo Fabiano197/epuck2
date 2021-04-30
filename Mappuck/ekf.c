@@ -47,11 +47,16 @@ void set_landmarks(void){
 	landmark_t l;
 	l.x = pos.x + (measurements_values.tof_distance_front + EPUCK_RADIUS)*cos(pos.phi);
 	l.y = pos.y + (measurements_values.tof_distance_front + EPUCK_RADIUS)*sin(pos.phi);
-	l.z = WALL;
-	find_landmark(l);
+	l.z = TOF;
+	if(measurements_values.tof_distance_front <= 300){
+		find_landmark(l);
+	}
 	l.x = pos.x + (measurements_values.proximity_distance_east+EPUCK_RADIUS)*cos(pos.phi+PI/2);
 	l.y = pos.y + (measurements_values.proximity_distance_east+EPUCK_RADIUS)*sin(pos.phi+PI/2);
-	find_landmark(l);
+	l.z = IR;
+	if(measurements_values.proximity_distance_east <= 80){
+		find_landmark(l);
+	}
 	l.x = pos.x;
 	l.y = pos.y;
 	l.z = pos.z;
@@ -70,7 +75,7 @@ static THD_FUNCTION(efk_thd, arg) {
      chThdSleepMilliseconds(5000);
 
 	 while(chThdShouldTerminateX() == false){
-		 while(motor_is_running())chThdSleepMilliseconds(10);
+		 while(motor_is_running()) chThdSleepMilliseconds(10);
 		 messagebus_topic_wait(measurements_topic, &measurements_values, sizeof(measurements_values));
 		 calculate_u();
 		 make_step(u);

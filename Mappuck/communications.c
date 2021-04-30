@@ -11,12 +11,12 @@ static thread_t *comThd;
 static bool com_configured = false;
 
 void send_data_Bluetooth(void){
-	uint16_t N = get_nb_landmarks();
+	landmark_t* landmark_ptr = get_landmark_ptr();
+	uint16_t nb_landmarks_to_send = get_nb_landmarks_to_send();
 	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)"START", 5);
-	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)&N, sizeof(uint16_t));
+	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)&nb_landmarks_to_send, sizeof(uint16_t));
 	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)get_position(), sizeof(position_t));
-	landmark_t *landmark_ptr = get_landmark_ptr();
-	for(uint16_t i = 0; i < N; i++){
+	for(uint16_t i = 0; i < nb_landmarks_to_send; i++){
 		chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)landmark_ptr, sizeof(landmark_t));
 		landmark_ptr++;
 	}

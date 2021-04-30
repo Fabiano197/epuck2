@@ -4,12 +4,13 @@
 #include <hal.h>
 #include <math.h>
 #include "measurements.h"
+#include "ekf.h"
 #include "motors.h"
 
-typedef struct {
+/*typedef struct {
 	float angle;
 	uint16_t dist;
-} control_command_t;
+} control_command_t;*/
 
 #define PI 3.141565
 
