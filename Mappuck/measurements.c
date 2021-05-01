@@ -29,8 +29,8 @@ static uint16_t get_proximity_distance(uint8_t sensor){
 }
 
 static float get_inclination(void){
-	float acc_y = get_acc_filtered(1, 3);
-	float acc_z = get_acc_filtered(2, 3);
+	float acc_y = get_acc_filtered(1, 5);
+	float acc_z = get_acc_filtered(2, 5);
 	return atan(-acc_y/acc_z);
 }
 

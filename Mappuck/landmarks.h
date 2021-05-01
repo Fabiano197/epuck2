@@ -41,4 +41,6 @@ landmark_t* get_landmark_ptr(void);
 */
 uint16_t get_nb_landmarks(void);
 
+uint16_t get_nb_landmarks_to_send(void);
+
 #endif

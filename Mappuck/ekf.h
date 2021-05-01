@@ -18,6 +18,15 @@ typedef struct {
 } position_t;
 
 typedef struct {
+	float x; 		//ticks
+	float y; 		//ticks
+	float z; 		//ticks
+	float phi;   	//rad polar angle compromised between -pi and pi
+	float theta; 	//rad azimuthal angle compromised between 0 and pi
+
+} position_float_t;
+
+typedef struct {
 	float angle;
 	uint16_t dist;
 } control_command_t;

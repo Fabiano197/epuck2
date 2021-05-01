@@ -12,7 +12,9 @@ from threading import Thread
 
 size_int16 = 2
 size_float = 4
-outer_rim = 1000
+outer_rim = 2000
+
+data_file_path = "D:\\_EPFL\\_Robotique\\epuck2\\Mappuck\\PythonScripts\\data_from_home.txt"
 
 class Numb:
     def __init__(self):
@@ -34,27 +36,20 @@ class Position:
 
 
 class Landmark:
-    def __init__(self, x, y, z):
+    def __init__(self, x, y, z, weight):
         self.x = x
         self.y = y
         self.z = z
-        if(z == -32768):
-            self.isWall = True
-        else:
-            self.isWall = False
+        self.weight = weight
     
     def print(self):
         print("Landmark at: x= " + str(self.x) + ",\ty=" + str(self.y) +
-                 ",\tz= " + str(self.z) + "\t", end='')
-        if(self.isWall):
-            print("It's a wall.")
-        else:
-            print("\tNot a wall.")
+                 ",\tz= " + str(self.z) + "\t")
 
+IR  =  32767
+TOF = -32768
 N = Numb()
 current_pos = Position(0, 0, 0, 0.0, 0.0)
-TOF = -32768
-IR  =  32767
 landmarks_TOF = []
 landmarks_IR  = []
 landmarks_POS = []
@@ -69,11 +64,9 @@ def update_plot():
         for i in range(len(landmarks_TOF)):
             xCoor[0].append(landmarks_TOF[i].x)
             yCoor[0].append(landmarks_TOF[i].y)
-            zCoor[0].append(landmarks_TOF[i].z)
         for i in range(len(landmarks_IR)):
             xCoor[1].append(landmarks_IR[i].x)
             yCoor[1].append(landmarks_IR[i].y)
-            zCoor[1].append(landmarks_IR[i].z)
         for i in range(len(landmarks_POS)):
             xCoor[2].append(landmarks_POS[i].x)
             yCoor[2].append(landmarks_POS[i].y)
@@ -98,7 +91,7 @@ def update_plot():
         #             50*math.sin(current_pos.phi), 
         #             width=10, 
         #             facecolor='black')
-        #plt.draw()
+        # plt.draw()
         fig.canvas.draw_idle()
         reader_thd.plot_updated()
         
@@ -109,6 +102,8 @@ def update_data(port):
 
 #handler when closing the window
 def handle_close(evt):
+    #we write the landmarks and the current pos in the text file
+    write_data_to_file()
     #we stop the serial thread
     reader_thd.stop()
     timer.stop()
@@ -168,6 +163,7 @@ def readMessageSerial(port):
     N.tot = N.tot + N.new
 
     # read the current position of the robot
+    temp = 0
     temp = struct.unpack('hhhff', port.read(16))
     if temp[0] < outer_rim and temp[0] > -outer_rim and temp[1] < outer_rim and temp[1] > -outer_rim and temp[2] < outer_rim and temp[2] > -outer_rim:
         current_pos.x = temp[0]
@@ -178,19 +174,56 @@ def readMessageSerial(port):
         current_pos.theta = temp[4]
 
     # read the N.new landmarks
+    global landmarks_POS
+    global landmarks_IR
+    global landmarks_TOF
     for i in range(N.new):
         temp = struct.unpack('hhh', port.read(3*size_int16))
         if temp[0] < outer_rim and temp[0] > -outer_rim and temp[1] < outer_rim and temp[1] > -outer_rim:
-            new_landmark = Landmark(0,0,0)
+            new_landmark = Landmark(0,0,0,1)
             new_landmark.x = temp[0]
             new_landmark.y = temp[1]
             new_landmark.z = temp[2]
             if new_landmark.z == TOF:
-                landmarks_TOF.append(new_landmark)
+                landmarks_TOF = combine_landmarks(landmarks_TOF, new_landmark)
+                #landmarks_TOF.append(new_landmark)
             elif new_landmark.z == IR:
+                #landmarks_IR = combine_landmarks(landmarks_IR, new_landmark)
                 landmarks_IR.append(new_landmark)
             else:
+                #landmarks_POS = combine_landmarks(landmarks_POS, new_landmark)
                 landmarks_POS.append(new_landmark)
+    return
+
+def combine_landmarks(landmarks, new):
+    if len(landmarks) < 3:
+        landmarks.append(new)
+        return landmarks
+    dists = []
+    for l in landmarks:
+        dists.append(  math.sqrt(float(l.x-new.x)*(l.x-new.x) + (l.y-new.y)*(l.y-new.y))  )
+    for i in range(len(dists)):
+        if dists[i] < 1:
+            x = float(landmarks[i].x*landmarks[i].weight + new.x*new.weight)
+            y = float(landmarks[i].y*landmarks[i].weight + new.y*new.weight)
+            landmarks[i] = Landmark(x, y, landmarks[i].z, landmarks[i].weight+new.weight)
+            break
+        else:
+            landmarks.append(new)
+    return landmarks
+
+def write_data_to_file():
+    data_file = open(data_file_path, "w+")
+    print("writer")
+    data_file.write(str(N.tot) + "\n")
+    data_file.write(str(current_pos.x) + "\t" + str(current_pos.y) + "\t" + str(current_pos.z) + "\t" + str(current_pos.phi) + "\t" + str(current_pos.theta) + "\n")
+    for l in landmarks_POS:
+        data_file.write(str(l.x) + "\t" + str(l.y) + "\t" + str(l.z) + "\n")
+    for l in landmarks_IR:
+        data_file.write(str(l.x) + "\t" + str(l.y) + "\t" + str(l.z) + "\n")
+    for l in landmarks_TOF:
+        data_file.write(str(l.x) + "\t" + str(l.y) + "\t" + str(l.z) + "\n")
+    data_file.close()
     return
 
 #thread used to control the communication part
