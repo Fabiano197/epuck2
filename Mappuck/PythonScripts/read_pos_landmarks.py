@@ -12,7 +12,7 @@ from threading import Thread
 
 size_int16 = 2
 size_float = 4
-outer_rim = 2000
+outer_rim = 1500
 
 data_file_path = "D:\\_EPFL\\_Robotique\\epuck2\\Mappuck\\PythonScripts\\data_from_home.txt"
 
@@ -84,14 +84,13 @@ def update_plot():
         dataPlot.plot(xCoor[0], yCoor[0], 'ro')
         dataPlot.plot(xCoor[1], yCoor[1], 'bo')
         dataPlot.scatter(xCoor[2], yCoor[2], marker='.', c=zCoor[2], cmap='nipy_spectral')
-        # plt.colorbar()
-        # dataPlot.scatter(current_pos.x, current_pos.y, marker='*', linewidths=4, c='black', s=200, zorder=3)
-        # dataPlot.arrow(current_pos.x, current_pos.y, 
-        #             50*math.cos(current_pos.phi), 
-        #             50*math.sin(current_pos.phi), 
-        #             width=10, 
-        #             facecolor='black')
-        # plt.draw()
+        #plt.colorbar(dataPlot)
+        dataPlot.scatter(current_pos.x, current_pos.y, marker='o', linewidths=4, c='black', s=50, zorder=3)
+        dataPlot.arrow(current_pos.x, current_pos.y, 
+                    30*math.cos(current_pos.phi), 
+                    30*math.sin(current_pos.phi), 
+                    width=10, 
+                    facecolor='black')
         fig.canvas.draw_idle()
         reader_thd.plot_updated()
         
@@ -185,36 +184,36 @@ def readMessageSerial(port):
             new_landmark.y = temp[1]
             new_landmark.z = temp[2]
             if new_landmark.z == TOF:
-                landmarks_TOF = combine_landmarks(landmarks_TOF, new_landmark)
+                landmarks_TOF = combine_landmarks(landmarks_TOF, new_landmark, 20)
                 #landmarks_TOF.append(new_landmark)
             elif new_landmark.z == IR:
-                #landmarks_IR = combine_landmarks(landmarks_IR, new_landmark)
-                landmarks_IR.append(new_landmark)
+                landmarks_IR = combine_landmarks(landmarks_IR, new_landmark, 10)
+                #landmarks_IR.append(new_landmark)
             else:
-                #landmarks_POS = combine_landmarks(landmarks_POS, new_landmark)
+                #landmarks_POS = combine_landmarks(landmarks_POS, new_landmark, 3)
                 landmarks_POS.append(new_landmark)
     return
 
-def combine_landmarks(landmarks, new):
+def combine_landmarks(landmarks, new, combine_dist):
     if len(landmarks) < 3:
         landmarks.append(new)
         return landmarks
     dists = []
+    has_changed = False
     for l in landmarks:
         dists.append(  math.sqrt(float(l.x-new.x)*(l.x-new.x) + (l.y-new.y)*(l.y-new.y))  )
     for i in range(len(dists)):
-        if dists[i] < 1:
-            x = float(landmarks[i].x*landmarks[i].weight + new.x*new.weight)
-            y = float(landmarks[i].y*landmarks[i].weight + new.y*new.weight)
-            landmarks[i] = Landmark(x, y, landmarks[i].z, landmarks[i].weight+new.weight)
-            break
-        else:
-            landmarks.append(new)
+        if dists[i] < combine_dist:
+            x = float(landmarks[i].x*landmarks[i].weight + new.x*new.weight)/(landmarks[i].weight+new.weight)
+            y = float(landmarks[i].y*landmarks[i].weight + new.y*new.weight)/(landmarks[i].weight+new.weight)
+            landmarks[i] = Landmark(int(x), int(y), landmarks[i].z, landmarks[i].weight+new.weight)
+            has_changed = True
+    if not has_changed: landmarks.append(new)
     return landmarks
 
 def write_data_to_file():
     data_file = open(data_file_path, "w+")
-    print("writer")
+    print("Wrote " + str(N.tot) + " Landmarks to the file.\n")
     data_file.write(str(N.tot) + "\n")
     data_file.write(str(current_pos.x) + "\t" + str(current_pos.y) + "\t" + str(current_pos.z) + "\t" + str(current_pos.phi) + "\t" + str(current_pos.theta) + "\n")
     for l in landmarks_POS:
