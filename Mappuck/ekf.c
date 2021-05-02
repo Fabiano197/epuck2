@@ -9,7 +9,7 @@
 #define EPUCK_RADIUS 35
 
 #define TWOPI 6.2831853f
-#define WHEEL_FULLDIST_STEP 399.5f
+#define WHEEL_FULLDIST_STEP 400.0f
 #define TICK_IN_MM 0.13f
 
 static position_t pos = {0,0,0,0,0};

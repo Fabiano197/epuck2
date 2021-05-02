@@ -14,7 +14,10 @@ size_int16 = 2
 size_float = 4
 outer_rim = 1500
 
-data_file_path = "D:\\_EPFL\\_Robotique\\epuck2\\Mappuck\\PythonScripts\\data_from_home.txt"
+data_file_path = "D:\\_EPFL\\_Robotique\\epuck2\\Mappuck\\PythonScripts\\testdata7.txt"
+
+port_file = open("port.txt", 'r')
+port_name = port_file.readline()
 
 class Numb:
     def __init__(self):
@@ -57,6 +60,7 @@ landmarks_POS = []
 #update the plot
 def update_plot():
     if(reader_thd.need_to_update_plot()):
+        global fig
         #[TOF], [IR], [POS]
         xCoor = [[],[],[]]
         yCoor = [[],[],[]]
@@ -84,7 +88,7 @@ def update_plot():
         dataPlot.plot(xCoor[0], yCoor[0], 'ro')
         dataPlot.plot(xCoor[1], yCoor[1], 'bo')
         dataPlot.scatter(xCoor[2], yCoor[2], marker='.', c=zCoor[2], cmap='nipy_spectral')
-        #plt.colorbar(dataPlot)
+        #fig.colorbar(dataPlot)
         dataPlot.scatter(current_pos.x, current_pos.y, marker='o', linewidths=4, c='black', s=50, zorder=3)
         dataPlot.arrow(current_pos.x, current_pos.y, 
                     30*math.cos(current_pos.phi), 
@@ -157,12 +161,11 @@ def readMessageSerial(port):
         state = read_START(c1, state)
 
     # read the number of landmarks
+    global N
     temp = struct.unpack('H', port.read(size_int16))
     N.new = temp[0]
-    N.tot = N.tot + N.new
 
     # read the current position of the robot
-    temp = 0
     temp = struct.unpack('hhhff', port.read(16))
     if temp[0] < outer_rim and temp[0] > -outer_rim and temp[1] < outer_rim and temp[1] > -outer_rim and temp[2] < outer_rim and temp[2] > -outer_rim:
         current_pos.x = temp[0]
@@ -186,15 +189,19 @@ def readMessageSerial(port):
             if new_landmark.z == TOF:
                 landmarks_TOF = combine_landmarks(landmarks_TOF, new_landmark, 20)
                 #landmarks_TOF.append(new_landmark)
+                #N.tot += 1
             elif new_landmark.z == IR:
                 landmarks_IR = combine_landmarks(landmarks_IR, new_landmark, 10)
                 #landmarks_IR.append(new_landmark)
+                #N.tot += 1
             else:
                 #landmarks_POS = combine_landmarks(landmarks_POS, new_landmark, 3)
                 landmarks_POS.append(new_landmark)
+                N.tot += 1
     return
 
 def combine_landmarks(landmarks, new, combine_dist):
+    global N
     if len(landmarks) < 3:
         landmarks.append(new)
         return landmarks
@@ -207,8 +214,11 @@ def combine_landmarks(landmarks, new, combine_dist):
             x = float(landmarks[i].x*landmarks[i].weight + new.x*new.weight)/(landmarks[i].weight+new.weight)
             y = float(landmarks[i].y*landmarks[i].weight + new.y*new.weight)/(landmarks[i].weight+new.weight)
             landmarks[i] = Landmark(int(x), int(y), landmarks[i].z, landmarks[i].weight+new.weight)
+            N.tot += 1
             has_changed = True
-    if not has_changed: landmarks.append(new)
+    if not has_changed: 
+        landmarks.append(new)
+        N.tot += 1
     return landmarks
 
 def write_data_to_file():
@@ -276,7 +286,7 @@ fig.canvas.mpl_connect('close_event', handle_close) #to detect when the window i
 
 #serial reader thread config
 #begins the serial thread
-reader_thd = serial_thread('com12')
+reader_thd = serial_thread(port_name)
 reader_thd.start()
 
 #timer to update the plot from within the state machine of matplotlib

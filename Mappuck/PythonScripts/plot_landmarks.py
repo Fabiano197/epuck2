@@ -4,7 +4,9 @@ plt.style.use('seaborn-whitegrid')
 import string
 import math
 
-data_file = open("D:\\_EPFL\\_Robotique\\epuck2\\Mappuck\\PythonScripts\\testdata5.txt", "r")
+data_file = open("D:\\_EPFL\\_Robotique\\epuck2\\Mappuck\\PythonScripts\\testdata9.txt", "r")
+IR  =  32767
+TOF = -32768
 
 # the structure for a position
 class Position:
@@ -57,6 +59,7 @@ def readMessageSerial(port):
     landmarks_list = []
     for i in range(N):
         line = port.readline()
+        if line == '': break
         numbers = line.split()
         l = Landmark(0,0,0)
         l.x = int(numbers[0])
@@ -68,10 +71,19 @@ def readMessageSerial(port):
     xCoor = [[],[],[]]
     yCoor = [[],[],[]]
     zCoor = [[],[],[]]
-    for i in range(N):
-        xCoor[i%3].append(landmarks_list[i].x)
-        yCoor[i%3].append(landmarks_list[i].y)
-        zCoor[i%3].append(landmarks_list[i].z)
+    for i in range(len(landmarks_list)):
+        if landmarks_list[i].z == TOF:
+            xCoor[0].append(landmarks_list[i].x)
+            yCoor[0].append(landmarks_list[i].y)
+            zCoor[0].append(landmarks_list[i].z)
+        elif landmarks_list[i].z == IR:
+            xCoor[1].append(landmarks_list[i].x)
+            yCoor[1].append(landmarks_list[i].y)
+            zCoor[1].append(landmarks_list[i].z)
+        else:
+            xCoor[2].append(landmarks_list[i].x)
+            yCoor[2].append(landmarks_list[i].y)
+            zCoor[2].append(landmarks_list[i].z)
     maxZ = max(zCoor[2])
     if maxZ == 0: maxZ = 1
     minZ = min(zCoor[2])
