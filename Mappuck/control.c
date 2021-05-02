@@ -20,16 +20,19 @@ static THD_FUNCTION(control_thd, arg) {
 	while(chThdShouldTerminateX() == false){
 		chBSemWait(&job_available_bsem);
 		motor_running = true;
+		// turn by the angle u.angle in rad
 		if(target_u.angle < 0){
 			right_motor_set_speed(MOTORSPEED);
 			left_motor_set_speed(-MOTORSPEED);
 			chThdSleepMilliseconds((uint16_t)(-target_u.angle*208100/MOTORSPEED+1));
 		}
-		if(target_u.angle > 0){
+		else if(target_u.angle > 0){
 			right_motor_set_speed(-MOTORSPEED);
 			left_motor_set_speed(MOTORSPEED);
 			chThdSleepMilliseconds((uint16_t)(target_u.angle*208100/MOTORSPEED+1));
 		}
+
+		// advance u.dist in mm
 		if(target_u.dist > 0){
 			right_motor_set_speed(MOTORSPEED);
 			left_motor_set_speed(MOTORSPEED);
