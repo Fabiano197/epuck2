@@ -1,41 +1,149 @@
 #include "landmarks.h"
 
-static uint16_t N = 0;
-static uint16_t last_landmark_sent = 0;
-static landmark_t landmarks[NB_LANDMARK_MAX];
+static uint16_t N_surface_landmarks = 0;
+static uint16_t N_wall_landmarks = 0;
+static uint16_t N_corners = 0;
+static wall_t wall_landmarks[NB_WALL_LANDMARK_MAX];
+static landmark_t surface_landmarks[NB_SURFACE_LANDMARK_MAX];
+static wall_t corners[NB_CORNERS_MAX];
 
+
+//Calculate euclidean distance between two wall landmarks
+float distance(wall_t a, wall_t b){
+  return sqrt((a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y));
+}
+
+//Calculate distance between line and point
+float error(line_t line, wall_t l){
+  return fabs(l.y-line.alpha-line.beta*l.x)/sqrt(line.beta*line.beta+1);
+}
+
+//Calculate intersection between two lines
+wall_t calculateIntersection(line_t a, line_t b){
+  wall_t l;
+  if(a.beta==b.beta)a.beta*=0.0001;
+  l.x = (b.alpha-a.alpha)/(a.beta-b.beta);
+  l.y = a.beta*l.x+a.alpha;
+  return l;
+}
+
+//Calculates line which passes through two given landmarks
+line_t fitTwoPoints(wall_t a, wall_t b){
+  line_t l;
+  if(a.x==b.x){
+    a.x++;
+  }
+  l.beta = (a.y-b.y)/(1.0*a.x-1.0*b.x);
+  l.alpha = (b.y*a.x-a.y*b.x)/(1.0*a.x-1.0*b.x);
+  return l;
+}
+
+//Calculate maximal distance of a line passing through first and last point of array and all other points
+int16_t calculateMaxError(wall_t *l_ptr_begin, uint16_t N){
+  uint16_t maxErrorIndex = 0;
+  line_t line = fitTwoPoints(*l_ptr_begin, *(l_ptr_begin+N-1));
+  for(uint16_t i = 0; i < N; i++){
+    if(error(line, *(l_ptr_begin+i)) > error(line, *(l_ptr_begin+maxErrorIndex))){
+      maxErrorIndex = i;
+    }
+  }
+  if(error(line, *(l_ptr_begin+maxErrorIndex))< MAX_CORRELATION_ERROR)return -1;
+  return maxErrorIndex;
+}
+
+//Linear Regression fitting
+line_t fitLine(wall_t* l_ptr_begin, uint16_t N){
+  line_t line;
+  float x_mean = 0, y_mean = 0, x_var = 0, xy_covar = 0;
+  wall_t* l_ptr = l_ptr_begin;
+  for(uint16_t i = 0; i < N; i++){
+    x_mean+=l_ptr->x;
+    y_mean+=l_ptr->y;
+    l_ptr++;
+  }
+  x_mean/=N;
+  y_mean/=N;
+  l_ptr = l_ptr_begin;
+  for(uint16_t i = 0; i < N; i++){
+    x_var+=(l_ptr->x-x_mean)*(l_ptr->x-x_mean);
+    xy_covar+= (l_ptr->x-x_mean)*(l_ptr->y-y_mean);
+    l_ptr++;
+  }
+  line.beta = xy_covar/x_var;
+  line.alpha = y_mean-line.beta*x_mean;
+  return line;
+}
+
+//Calculate new corners for polygon fitting of walls
+void calculate_linesegments(bool closeLoop){
+  static line_t prevLine = {0, 0};
+  static line_t firstLine = {0, 0};
+
+  if(closeLoop){
+    corners[N_corners] = calculateIntersection(prevLine, firstLine);
+    corners[0] = corners[N_corners];
+    N_corners++;
+    return;
+  }
+
+  if(N_wall_landmarks<2)return;
+  int16_t devide = calculateMaxError(&wall_landmarks[0], N_wall_landmarks);
+  if(devide < 2)return;
+  if(prevLine.alpha == 0 && prevLine.beta == 0){
+	  prevLine = fitLine(&wall_landmarks[0], devide);
+	  firstLine = prevLine;
+	  return;
+  }
+  line_t currentLine = fitLine(&wall_landmarks[0], devide);
+  corners[N_corners] = calculateIntersection(prevLine, currentLine);
+  N_corners++;
+  prevLine = currentLine;
+  for(uint16_t i = 0; i < N_wall_landmarks-devide-1; i++){
+	  wall_landmarks[i] = wall_landmarks[i+devide+1];
+  }
+  N_wall_landmarks = N_wall_landmarks-devide-1;
+  return;
+}
 
 /****************************PUBLIC FUNCTIONS*************************************/
 
-int16_t find_landmark(landmark_t coordinates){
-	landmarks[N] = coordinates;
-	N++;
-	return -1;
+
+bool enter_landmark(landmark_t coordinates){
+	if(coordinates.z == TOF)return false;
+	else if(coordinates.z == IR){
+		static wall_t first_wall;
+		wall_landmarks[N_wall_landmarks] = (wall_t){coordinates.x, coordinates.y};
+		if(N_wall_landmarks==0){
+			first_wall = wall_landmarks[0];
+		}
+		N_wall_landmarks++;
+		calculate_linesegments(false);
+		if(N_corners > 1 && distance(first_wall, wall_landmarks[N_wall_landmarks-1]) < CLOSE_LOOP_RADIUS){
+			calculate_linesegments(true);
+			return true;
+		}
+		return false;
+	}
+	else{
+		surface_landmarks[N_surface_landmarks] = coordinates;
+		N_surface_landmarks++;
+		return false;
+	}
 }
 
-landmark_t get_landmark(int16_t i){
-	return landmarks[i];
+landmark_t get_surface_landmark(int16_t i){
+	return surface_landmarks[i];
 }
 
 landmark_t* get_landmark_ptr(void){
-	return &landmarks[last_landmark_sent+1];
+	return &surface_landmarks[0];
 }
 
 uint16_t get_nb_landmarks_to_send(void){
-	uint16_t diff = N-last_landmark_sent;
-	last_landmark_sent = N;
+	uint16_t diff = 0;
 	return diff;
 }
 
-uint16_t get_nb_landmarks(void){
-	return N;
-}
-
-landmark_t* get_next_landmark(uint16_t last_sent){
-	if(last_sent == N){
-		return 0;
-	}
-	else{
-		return &landmarks[last_sent+1];
-	}
+uint16_t get_nb_surface_landmarks(void){
+	return N_surface_landmarks;
 }

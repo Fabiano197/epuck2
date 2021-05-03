@@ -4,7 +4,7 @@ plt.style.use('seaborn-whitegrid')
 import string
 import math
 
-data_file = open("C:\\Users\\fphal\\Desktop\epuck2\\Mappuck\\PythonScripts\\testdata5_fitted.txt", "r")
+data_file = open("C:\\Users\\fphal\\Desktop\epuck2\\Mappuck\\PythonScripts\\testdata8_fitted.txt", "r")
 
 # the structure for a position
 class Position:

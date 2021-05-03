@@ -1,8 +1,8 @@
 #include<bits/stdc++.h>
 
 #define WALL -32768
-#define MAX_WALL_ERROR 30
-#define CLOSE_LOOP_DISTANCE 25
+#define MAX_WALL_ERROR 15
+#define CLOSE_LOOP_DISTANCE 75
 
 using namespace std;
 
