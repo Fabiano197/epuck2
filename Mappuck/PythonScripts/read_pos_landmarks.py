@@ -103,12 +103,13 @@ def update_plot():
         plt.plot(corners_xy[0], corners_xy[1], 'ro-')
         plt.plot(walls_xy[0],   walls_xy[1],   'bo')
         plt.scatter(surf_lm_xyz[0], surf_lm_xyz[1], marker='.', c=surf_lm_xyz[2], cmap='nipy_spectral')
-        dataPlot.scatter(current_pos.x, current_pos.y, marker='o', linewidths=4, c='black', s=60, zorder=3)
-        dataPlot.arrow(current_pos.x, current_pos.y, 
+        plt.scatter(current_pos.x, current_pos.y, marker='*', linewidths=4, c='black', s=70, zorder=3)
+        plt.arrow(current_pos.x, current_pos.y, 
                     30*math.cos(current_pos.phi), 
                     30*math.sin(current_pos.phi), 
                     width=10, 
-                    facecolor='black')
+                    facecolor='black',
+                    zorder = 2)
         plt.colorbar()
         plt.draw()
         #fig.canvas.draw_idle()
@@ -224,7 +225,6 @@ def readMessageSerial(port):
 
     # read the N.nb_surf_lm surface landmarks
     global landmarks_surf
-    landmarks_surf.clear()
     for i in range(N.nb_surf_lm):
         temp = struct.unpack('hhh', port.read(3*size_int16))
         if temp[0] < outer_rim and temp[0] > -outer_rim and temp[1] < outer_rim and temp[1] > -outer_rim:
@@ -306,7 +306,7 @@ class serial_thread(Thread):
 
 #figure config
 fig = plt.figure()
-dataPlot = fig.add_subplot(111)
+#dataPlot = fig.add_subplot(111)
 fig.canvas.set_window_title('Map')
 fig.canvas.mpl_connect('close_event', handle_close) #to detect when the window is closed and if we do a ctrl-c
 
