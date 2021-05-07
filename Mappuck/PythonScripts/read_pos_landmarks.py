@@ -11,18 +11,19 @@ import math
 from threading import Thread
 
 size_int16 = 2
-size_float = 4
-outer_rim = 1500
+size_float = 5
+outer_rim = 1500.0
 
-data_file_path = "D:\\_EPFL\\_Robotique\\epuck2\\Mappuck\\PythonScripts\\testdata7.txt"
+data_file_path = "D:\\_EPFL\\_Robotique\\epuck2\\Mappuck\\PythonScripts\\testdataNew.txt"
 
 port_file = open("port.txt", 'r')
 port_name = port_file.readline()
 
 class Numb:
     def __init__(self):
-        self.new = 0
-        self.tot = 0
+        self.nb_walls = 0
+        self.nb_corners = 0
+        self.nb_surf_lm = 0
 
 # the structure for a position
 class Position:
@@ -38,58 +39,69 @@ class Position:
         print("Current angles: phi= " + str(self.phi) + ",  theta= " + str(self.theta))
 
 
-class Landmark:
-    def __init__(self, x, y, z, weight):
+class Surf_Landmark:
+    def __init__(self, x, y, z):
         self.x = x
         self.y = y
         self.z = z
-        self.weight = weight
     
     def print(self):
-        print("Landmark at: x= " + str(self.x) + ",\ty=" + str(self.y) +
+        print("Surface landmark at: x= " + str(self.x) + ",\ty=" + str(self.y) +
                  ",\tz= " + str(self.z) + "\t")
 
-IR  =  32767
-TOF = -32768
+class Corner:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+    
+    def print(self):
+        print("Corner at: x= " + str(self.x) + ",\ty=" + str(self.y) + "\t")
+
+class Wall:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+    
+    def print(self):
+        print("Wall point at: x= " + str(self.x) + ",\ty=" + str(self.y) + "\t")
+
 N = Numb()
-current_pos = Position(0, 0, 0, 0.0, 0.0)
-landmarks_TOF = []
-landmarks_IR  = []
-landmarks_POS = []
+current_pos = Position(0.0, 0.0, 0.0, 0.0, 0.0)
+corner_points = []
+wall_points  = []
+landmarks_surf = []
 
 #update the plot
 def update_plot():
     if(reader_thd.need_to_update_plot()):
         global fig
-        #[TOF], [IR], [POS]
-        xCoor = [[],[],[]]
-        yCoor = [[],[],[]]
-        zCoor = [[],[],[]]
-        for i in range(len(landmarks_TOF)):
-            xCoor[0].append(landmarks_TOF[i].x)
-            yCoor[0].append(landmarks_TOF[i].y)
-        for i in range(len(landmarks_IR)):
-            xCoor[1].append(landmarks_IR[i].x)
-            yCoor[1].append(landmarks_IR[i].y)
-        for i in range(len(landmarks_POS)):
-            xCoor[2].append(landmarks_POS[i].x)
-            yCoor[2].append(landmarks_POS[i].y)
-            zCoor[2].append(landmarks_POS[i].z)
+        walls_xy    = [[],[]]
+        surf_lm_xyz = [[],[],[]]
+        for i in range(len(wall_points)):
+            walls_xy[0].append(wall_points[i].x)
+            walls_xy[1].append(wall_points[i].y)
+        for i in range(len(landmarks_surf)):
+            surf_lm_xyz[0].append(landmarks_surf[i].x)
+            surf_lm_xyz[1].append(landmarks_surf[i].y)
+            surf_lm_xyz[2].append(landmarks_surf[i].z)
 
-        maxZ = max(zCoor[2])
+        # determine the range of the z coordinates of the surface landmarks
+        maxZ = max(surf_lm_xyz[2])
         if maxZ == 0: maxZ = 1
-        minZ = min(zCoor[2])
+        minZ = min(surf_lm_xyz[2])
         if minZ == 0: minZ = -1
         
-        for z in zCoor[2]:
+        for z in surf_lm_xyz[2]:
             z = 255*(z-minZ)/(maxZ-minZ)
         
         dataPlot.clear()
-        dataPlot.plot(xCoor[0], yCoor[0], 'ro')
-        dataPlot.plot(xCoor[1], yCoor[1], 'bo')
-        dataPlot.scatter(xCoor[2], yCoor[2], marker='.', c=zCoor[2], cmap='nipy_spectral')
+        for i in range(len(corner_points)):
+            dataPlot.plot(corner_points[i].x, corner_points[i].y, 'ro--')
+
+        dataPlot.plot(walls_xy[0], walls_xy[1], 'bo')
+        dataPlot.scatter(surf_lm_xyz[0], surf_lm_xyz[1], marker='.', c=surf_lm_xyz[2], cmap='nipy_spectral')
         #fig.colorbar()
-        dataPlot.scatter(current_pos.x, current_pos.y, marker='o', linewidths=4, c='black', s=50, zorder=3)
+        dataPlot.scatter(current_pos.x, current_pos.y, marker='o', linewidths=4, c='black', s=60, zorder=3)
         dataPlot.arrow(current_pos.x, current_pos.y, 
                     30*math.cos(current_pos.phi), 
                     30*math.sin(current_pos.phi), 
@@ -160,13 +172,9 @@ def readMessageSerial(port):
         #update the state
         state = read_START(c1, state)
 
-    # read the number of landmarks
-    global N
-    temp = struct.unpack('H', port.read(size_int16))
-    N.new = temp[0]
-
     # read the current position of the robot
-    temp = struct.unpack('hhhff', port.read(16))
+    global current_pos
+    temp = struct.unpack('fffff', port.read(5*size_float))
     if temp[0] < outer_rim and temp[0] > -outer_rim and temp[1] < outer_rim and temp[1] > -outer_rim and temp[2] < outer_rim and temp[2] > -outer_rim:
         current_pos.x = temp[0]
         current_pos.y = temp[1]
@@ -175,62 +183,74 @@ def readMessageSerial(port):
         current_pos.phi = temp[3]
         current_pos.theta = temp[4]
 
-    # read the N.new landmarks
-    global landmarks_POS
-    global landmarks_IR
-    global landmarks_TOF
-    for i in range(N.new):
+    # read the number of corners
+    global N
+    temp = struct.unpack('H', port.read(size_int16))
+    N.nb_corners = temp[0]
+
+    # read the N.nb_corners corner points
+    global corner_points
+    for i in range(N.nb_corners):
+        temp = struct.unpack('hh', port.read(2*size_int16))
+        if temp[0] < outer_rim and temp[0] > -outer_rim and temp[1] < outer_rim and temp[1] > -outer_rim:
+            new_corner = Corner(0,0)
+            new_corner.x = temp[0]
+            new_corner.y = temp[1]
+            corner_points.append(new_corner)
+    
+    #read the number of wall points
+    temp = struct.unpack('H', port.read(size_int16))
+    N.nb_walls = temp[0]
+   
+    # read the N.nb_walls wall points
+    global wall_points
+    for i in range(N.nb_walls):
+        temp = struct.unpack('hh', port.read(2*size_int16))
+        if temp[0] < outer_rim and temp[0] > -outer_rim and temp[1] < outer_rim and temp[1] > -outer_rim:
+            new_wall = Wall(0,0)
+            new_wall.x = temp[0]
+            new_wall.y = temp[1]
+            wall_points.append(new_wall)
+        
+    #read the number of surface landmarks
+    temp = struct.unpack('H', port.read(size_int16))
+    N.nb_surf_lm = temp[0]
+
+    # read the N.nb_surf_lm surface landmarks
+    global landmarks_surf
+    for i in range(N.nb_surf_lm):
         temp = struct.unpack('hhh', port.read(3*size_int16))
         if temp[0] < outer_rim and temp[0] > -outer_rim and temp[1] < outer_rim and temp[1] > -outer_rim:
-            new_landmark = Landmark(0,0,0,1)
+            new_landmark = Surf_Landmark(0,0,0)
             new_landmark.x = temp[0]
             new_landmark.y = temp[1]
             new_landmark.z = temp[2]
-            if new_landmark.z == TOF:
-                landmarks_TOF = combine_landmarks(landmarks_TOF, new_landmark, 20)
-                #landmarks_TOF.append(new_landmark)
-                #N.tot += 1
-            elif new_landmark.z == IR:
-                landmarks_IR = combine_landmarks(landmarks_IR, new_landmark, 10)
-                #landmarks_IR.append(new_landmark)
-                #N.tot += 1
-            else:
-                #landmarks_POS = combine_landmarks(landmarks_POS, new_landmark, 3)
-                landmarks_POS.append(new_landmark)
-                N.tot += 1
+            landmarks_surf.append(new_landmark)
+    
     return
-
-def combine_landmarks(landmarks, new, combine_dist):
-    global N
-    if len(landmarks) < 3:
-        landmarks.append(new)
-        return landmarks
-    dists = []
-    has_changed = False
-    for l in landmarks:
-        dists.append(  math.sqrt(float(l.x-new.x)*(l.x-new.x) + (l.y-new.y)*(l.y-new.y))  )
-    for i in range(len(dists)):
-        if dists[i] < combine_dist:
-            x = float(landmarks[i].x*landmarks[i].weight + new.x*new.weight)/(landmarks[i].weight+new.weight)
-            y = float(landmarks[i].y*landmarks[i].weight + new.y*new.weight)/(landmarks[i].weight+new.weight)
-            landmarks[i] = Landmark(int(x), int(y), landmarks[i].z, landmarks[i].weight+new.weight)
-            N.tot += 1
-            has_changed = True
-    if not has_changed: 
-        landmarks.append(new)
-        N.tot += 1
-    return landmarks
 
 def write_data_to_file():
     data_file = open(data_file_path, "w+")
-    print("Wrote " + str(N.tot) + " Landmarks to the file.\n")
-    data_file.write(str(N.tot) + "\n")
+
+    # print the current position of the robot
     data_file.write(str(current_pos.x) + "\t" + str(current_pos.y) + "\t" + str(current_pos.z) + "\t" + str(current_pos.phi) + "\t" + str(current_pos.theta) + "\n")
-    for l in landmarks_POS:
-        data_file.write(str(l.x) + "\t" + str(l.y) + "\t" + str(l.z) + "\n")
-    for l in landmarks_IR:
-        data_file.write(str(l.x) + "\t" + str(l.y) + "\t" + str(l.z) + "\n")
-    for l in landmarks_TOF:
+    
+    # print all the corners
+    print("Wrote " + str(N.nb_corners) + " Corners to the file.\n")
+    data_file.write(str(N.nb_corners) + "\n")
+    for c in corner_points:
+        data_file.write(str(c.x) + "\t" + str(c.y) + "\n")
+
+    # print all the walls
+    print("Wrote " + str(N.nb_walls) + " Walls to the file.\n")
+    data_file.write(str(N.nb_walls) + "\n")
+    for w in wall_points:
+        data_file.write(str(w.x) + "\t" + str(w.y) + "\n")
+
+    # print all the surface landmarks
+    print("Wrote " + str(N.nb_surf_lm) + " surface landmarks to the file.\n")
+    data_file.write(str(N.nb_surf_lm) + "\n")
+    for l in landmarks_surf:
         data_file.write(str(l.x) + "\t" + str(l.y) + "\t" + str(l.z) + "\n")
     data_file.close()
     return
