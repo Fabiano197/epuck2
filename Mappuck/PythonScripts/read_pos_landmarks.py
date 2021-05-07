@@ -11,7 +11,7 @@ import math
 from threading import Thread
 
 size_int16 = 2
-size_float = 5
+size_float = 4
 outer_rim = 1500.0
 
 data_file_path = "D:\\_EPFL\\_Robotique\\epuck2\\Mappuck\\PythonScripts\\testdataNew.txt"
@@ -75,8 +75,12 @@ landmarks_surf = []
 def update_plot():
     if(reader_thd.need_to_update_plot()):
         global fig
+        corners_xy  = [[],[]]
         walls_xy    = [[],[]]
         surf_lm_xyz = [[],[],[]]
+        for i in range(len(corner_points)):
+            corners_xy[0].append(corner_points[i].x)
+            corners_xy[1].append(corner_points[i].y)
         for i in range(len(wall_points)):
             walls_xy[0].append(wall_points[i].x)
             walls_xy[1].append(wall_points[i].y)
@@ -94,20 +98,20 @@ def update_plot():
         for z in surf_lm_xyz[2]:
             z = 255*(z-minZ)/(maxZ-minZ)
         
-        dataPlot.clear()
-        for i in range(len(corner_points)):
-            dataPlot.plot(corner_points[i].x, corner_points[i].y, 'ro--')
+        fig.clear()
 
-        dataPlot.plot(walls_xy[0], walls_xy[1], 'bo')
-        dataPlot.scatter(surf_lm_xyz[0], surf_lm_xyz[1], marker='.', c=surf_lm_xyz[2], cmap='nipy_spectral')
-        #fig.colorbar()
+        plt.plot(corners_xy[0], corners_xy[1], 'ro-')
+        plt.plot(walls_xy[0],   walls_xy[1],   'bo')
+        plt.scatter(surf_lm_xyz[0], surf_lm_xyz[1], marker='.', c=surf_lm_xyz[2], cmap='nipy_spectral')
         dataPlot.scatter(current_pos.x, current_pos.y, marker='o', linewidths=4, c='black', s=60, zorder=3)
         dataPlot.arrow(current_pos.x, current_pos.y, 
                     30*math.cos(current_pos.phi), 
                     30*math.sin(current_pos.phi), 
                     width=10, 
                     facecolor='black')
-        fig.canvas.draw_idle()
+        plt.colorbar()
+        plt.draw()
+        #fig.canvas.draw_idle()
         reader_thd.plot_updated()
         
 
@@ -175,7 +179,7 @@ def readMessageSerial(port):
     # read the current position of the robot
     global current_pos
     temp = struct.unpack('fffff', port.read(5*size_float))
-    if temp[0] < outer_rim and temp[0] > -outer_rim and temp[1] < outer_rim and temp[1] > -outer_rim and temp[2] < outer_rim and temp[2] > -outer_rim:
+    if temp[0] < outer_rim and temp[0] > -outer_rim and temp[1] < outer_rim and temp[1] > -outer_rim:
         current_pos.x = temp[0]
         current_pos.y = temp[1]
         current_pos.z = temp[2]
@@ -190,6 +194,7 @@ def readMessageSerial(port):
 
     # read the N.nb_corners corner points
     global corner_points
+    corner_points.clear()
     for i in range(N.nb_corners):
         temp = struct.unpack('hh', port.read(2*size_int16))
         if temp[0] < outer_rim and temp[0] > -outer_rim and temp[1] < outer_rim and temp[1] > -outer_rim:
@@ -204,6 +209,7 @@ def readMessageSerial(port):
    
     # read the N.nb_walls wall points
     global wall_points
+    wall_points.clear()
     for i in range(N.nb_walls):
         temp = struct.unpack('hh', port.read(2*size_int16))
         if temp[0] < outer_rim and temp[0] > -outer_rim and temp[1] < outer_rim and temp[1] > -outer_rim:
@@ -218,6 +224,7 @@ def readMessageSerial(port):
 
     # read the N.nb_surf_lm surface landmarks
     global landmarks_surf
+    landmarks_surf.clear()
     for i in range(N.nb_surf_lm):
         temp = struct.unpack('hhh', port.read(3*size_int16))
         if temp[0] < outer_rim and temp[0] > -outer_rim and temp[1] < outer_rim and temp[1] > -outer_rim:
@@ -300,17 +307,14 @@ class serial_thread(Thread):
 #figure config
 fig = plt.figure()
 dataPlot = fig.add_subplot(111)
-dataPlot.relim()
 fig.canvas.set_window_title('Map')
 fig.canvas.mpl_connect('close_event', handle_close) #to detect when the window is closed and if we do a ctrl-c
 
-#serial reader thread config
-#begins the serial thread
+#serial reader thread config and start
 reader_thd = serial_thread(port_name)
 reader_thd.start()
 
-#timer to update the plot from within the state machine of matplotlib
-#because matplotlib is not thread safe...
+#timer to update the plot
 timer = fig.canvas.new_timer(interval=50)
 timer.add_callback(update_plot)
 timer.start()
