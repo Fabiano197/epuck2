@@ -31,7 +31,7 @@ static uint16_t get_proximity_distance(uint8_t sensor){
 static float get_inclination(void){
 	float acc_y = get_acc_filtered(1, 5);
 	float acc_z = get_acc_filtered(2, 5);
-	return atan(-acc_y/acc_z);
+	return atan(-acc_y/acc_z)+0.0239;
 }
 
 static THD_WORKING_AREA(waMeasurements, 512);

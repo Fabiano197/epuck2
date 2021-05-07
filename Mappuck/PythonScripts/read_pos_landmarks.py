@@ -88,7 +88,7 @@ def update_plot():
         dataPlot.plot(xCoor[0], yCoor[0], 'ro')
         dataPlot.plot(xCoor[1], yCoor[1], 'bo')
         dataPlot.scatter(xCoor[2], yCoor[2], marker='.', c=zCoor[2], cmap='nipy_spectral')
-        #fig.colorbar(dataPlot)
+        #fig.colorbar()
         dataPlot.scatter(current_pos.x, current_pos.y, marker='o', linewidths=4, c='black', s=50, zorder=3)
         dataPlot.arrow(current_pos.x, current_pos.y, 
                     30*math.cos(current_pos.phi), 
