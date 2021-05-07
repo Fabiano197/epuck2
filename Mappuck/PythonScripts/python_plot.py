@@ -59,32 +59,40 @@ def readUint8Serial(port):
                 state = 1
             else:
                 state = 0
-    N = struct.unpack('H', port.read(2))
-    N = N[0]
-    print(N)
-    position = struct.unpack('hhhff', port.read(16))
+
+    position = struct.unpack('fffff', port.read(20))
     print(position)
-    landmark = [0]*N
-    green = 0
-    x = []
-    y = []
-    z = []
-    for i in range(N):
-        landmark[i] = struct.unpack('hhh', port.read(6))
-    for i in range(N):
-        print(landmark[i][0], " ", landmark[i][1], " ", landmark[i][2])
-        if(green == 0):
-            plt.scatter(landmark[i][0], landmark[i][1], color = 'green')
-        if(green==1):
-            plt.scatter(landmark[i][0], landmark[i][1], color = 'blue')
-        if(green==2):
-            x.append(landmark[i][0])
-            y.append(landmark[i][1])
-            z.append(landmark[i][2])
-        green+=1
-        green %=3
-    plt.scatter(x, y, c = z, cmap ='autumn')
+    N_corners = struct.unpack('H', port.read(2))
+    N_corners = N_corners[0]
+    print(N_corners)
+    cornersX = []
+    cornersY = []
+    for i in range(N_corners):
+        temp = struct.unpack('h', port.read(2))
+        cornersX.append(temp[0])
+        temp = struct.unpack('h', port.read(2))
+        cornersY.append(temp[0])
+    print(cornersX)
+    print(cornersY)
+
+    N_walls = struct.unpack('H', port.read(2))
+    N_walls = N_walls[0]
+    print(N_walls)
+    wallsX = []
+    wallsY = []
+    for i in range(N_walls):
+        temp = struct.unpack('h', port.read(2))
+        wallsX.append(temp[0])
+        temp = struct.unpack('h', port.read(2))
+        wallsY.append(temp[0])
+    print(wallsX)
+    print(wallsY)
+
+    plt.plot(cornersX, cornersY , 'black')
+    plt.scatter(wallsX, wallsY, marker='.')
     plt.show()
+
+
 
 
 #thread used to control the communication part
