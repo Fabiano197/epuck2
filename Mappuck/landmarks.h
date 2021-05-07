@@ -40,20 +40,35 @@ typedef struct {
 bool enter_landmark(landmark_t coordinates);
 
 /**
-* @brief Returns the ith landmark (if it exists), otherwise the function returns landmark with x, y, z = WALL
+* @brief Returns number of surface landmarks currently stored
 */
-landmark_t get_surface_landmark(int16_t i);
+uint16_t get_nb_surface_landmarks(void);
 
 /**
-* @brief Returns pointer to first landmark
+* @brief Returns pointer to first surface landmark
 */
 landmark_t* get_surface_landmark_ptr(void);
 
 /**
-* @brief Returns number of landmarks currently stored
+* @brief Returns number of wall landmarks currently stored
 */
-uint16_t get_nb_surface_landmarks(void);
+uint16_t get_nb_wall_landmarks(void);
 
-uint16_t get_nb_surface_landmarks_to_send(void);
+/**
+* @brief Returns pointer to first wall landmark
+*/
+wall_t* get_wall_landmark_ptr(void);
+
+
+/**
+* @brief Returns number of corners currently stored
+*/
+uint16_t get_nb_corners(void);
+
+/**
+* @brief Returns pointer to first corner
+*/
+wall_t* get_corner_ptr(void);
+
 
 #endif

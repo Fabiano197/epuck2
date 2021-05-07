@@ -131,19 +131,33 @@ bool enter_landmark(landmark_t coordinates){
 	}
 }
 
-landmark_t get_surface_landmark(int16_t i){
-	return surface_landmarks[i];
-}
-
-landmark_t* get_landmark_ptr(void){
-	return &surface_landmarks[0];
-}
-
-uint16_t get_nb_landmarks_to_send(void){
-	uint16_t diff = 0;
-	return diff;
-}
-
 uint16_t get_nb_surface_landmarks(void){
 	return N_surface_landmarks;
 }
+
+
+landmark_t* get_surface_landmark_ptr(void){
+	return &surface_landmarks[0];
+}
+
+
+uint16_t get_nb_wall_landmarks(void){
+	return N_wall_landmarks;
+}
+
+
+wall_t* get_wall_landmark_ptr(void){
+	return &wall_landmarks[0];
+}
+
+
+uint16_t get_nb_corners(void){
+	return N_corners;
+}
+
+
+wall_t* get_corner_ptr(void){
+	return &corners[0];
+}
+
+
