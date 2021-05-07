@@ -14,7 +14,7 @@ size_int16 = 2
 size_float = 4
 outer_rim = 1500.0
 
-data_file_path = "D:\\_EPFL\\_Robotique\\epuck2\\Mappuck\\PythonScripts\\testdataNew.txt"
+data_file_path = "testdataNew.txt"
 
 port_file = open("port.txt", 'r')
 port_name = port_file.readline()
@@ -44,7 +44,7 @@ class Surf_Landmark:
         self.x = x
         self.y = y
         self.z = z
-    
+
     def print(self):
         print("Surface landmark at: x= " + str(self.x) + ",\ty=" + str(self.y) +
                  ",\tz= " + str(self.z) + "\t")
@@ -53,7 +53,7 @@ class Corner:
     def __init__(self, x, y):
         self.x = x
         self.y = y
-    
+
     def print(self):
         print("Corner at: x= " + str(self.x) + ",\ty=" + str(self.y) + "\t")
 
@@ -61,7 +61,7 @@ class Wall:
     def __init__(self, x, y):
         self.x = x
         self.y = y
-    
+
     def print(self):
         print("Wall point at: x= " + str(self.x) + ",\ty=" + str(self.y) + "\t")
 
@@ -91,29 +91,30 @@ def update_plot():
 
         # determine the range of the z coordinates of the surface landmarks
         maxZ = max(surf_lm_xyz[2])
-        if maxZ == 0: maxZ = 1
         minZ = min(surf_lm_xyz[2])
-        if minZ == 0: minZ = -1
-        
+        if maxZ == minZ:
+            maxZ = maxZ+1
+
         for z in surf_lm_xyz[2]:
             z = 255*(z-minZ)/(maxZ-minZ)
-        
+
         fig.clear()
 
         plt.plot(corners_xy[0], corners_xy[1], 'ro-')
         plt.plot(walls_xy[0],   walls_xy[1],   'bo')
         plt.scatter(surf_lm_xyz[0], surf_lm_xyz[1], marker='.', c=surf_lm_xyz[2], cmap='nipy_spectral')
-        dataPlot.scatter(current_pos.x, current_pos.y, marker='o', linewidths=4, c='black', s=60, zorder=3)
-        dataPlot.arrow(current_pos.x, current_pos.y, 
-                    30*math.cos(current_pos.phi), 
-                    30*math.sin(current_pos.phi), 
-                    width=10, 
-                    facecolor='black')
+        plt.scatter(current_pos.x, current_pos.y, marker='*', linewidths=4, c='black', s=70, zorder=3)
+        plt.arrow(current_pos.x, current_pos.y,
+                    30*math.cos(current_pos.phi),
+                    30*math.sin(current_pos.phi),
+                    width=10,
+                    facecolor='black',
+                    zorder = 2)
         plt.colorbar()
         plt.draw()
         #fig.canvas.draw_idle()
         reader_thd.plot_updated()
-        
+
 
 def update_data(port):
     readMessageSerial(port)
@@ -202,11 +203,11 @@ def readMessageSerial(port):
             new_corner.x = temp[0]
             new_corner.y = temp[1]
             corner_points.append(new_corner)
-    
+
     #read the number of wall points
     temp = struct.unpack('H', port.read(size_int16))
     N.nb_walls = temp[0]
-   
+
     # read the N.nb_walls wall points
     global wall_points
     wall_points.clear()
@@ -217,14 +218,13 @@ def readMessageSerial(port):
             new_wall.x = temp[0]
             new_wall.y = temp[1]
             wall_points.append(new_wall)
-        
+
     #read the number of surface landmarks
     temp = struct.unpack('H', port.read(size_int16))
     N.nb_surf_lm = temp[0]
 
     # read the N.nb_surf_lm surface landmarks
     global landmarks_surf
-    landmarks_surf.clear()
     for i in range(N.nb_surf_lm):
         temp = struct.unpack('hhh', port.read(3*size_int16))
         if temp[0] < outer_rim and temp[0] > -outer_rim and temp[1] < outer_rim and temp[1] > -outer_rim:
@@ -233,7 +233,7 @@ def readMessageSerial(port):
             new_landmark.y = temp[1]
             new_landmark.z = temp[2]
             landmarks_surf.append(new_landmark)
-    
+
     return
 
 def write_data_to_file():
@@ -241,7 +241,7 @@ def write_data_to_file():
 
     # print the current position of the robot
     data_file.write(str(current_pos.x) + "\t" + str(current_pos.y) + "\t" + str(current_pos.z) + "\t" + str(current_pos.phi) + "\t" + str(current_pos.theta) + "\n")
-    
+
     # print all the corners
     print("Wrote " + str(N.nb_corners) + " Corners to the file.\n")
     data_file.write(str(N.nb_corners) + "\n")
@@ -281,7 +281,7 @@ class serial_thread(Thread):
     def run(self):
         while self.alive:
             update_data(self.port)
-    
+
     #tell the plot need to be updated
     def tell_to_update_plot(self):
         self.need_to_update = True
@@ -289,7 +289,7 @@ class serial_thread(Thread):
     #tell the plot has been updated
     def plot_updated(self):
         self.need_to_update = False
-    
+
     #tell if the plot need to be updated
     def need_to_update_plot(self):
         return self.need_to_update
@@ -306,7 +306,7 @@ class serial_thread(Thread):
 
 #figure config
 fig = plt.figure()
-dataPlot = fig.add_subplot(111)
+#dataPlot = fig.add_subplot(111)
 fig.canvas.set_window_title('Map')
 fig.canvas.mpl_connect('close_event', handle_close) #to detect when the window is closed and if we do a ctrl-c
 
