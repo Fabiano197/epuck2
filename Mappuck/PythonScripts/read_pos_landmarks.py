@@ -90,8 +90,11 @@ def update_plot():
             surf_lm_xyz[2].append(landmarks_surf[i].z)
 
         # determine the range of the z coordinates of the surface landmarks
-        maxZ = max(surf_lm_xyz[2])
-        minZ = min(surf_lm_xyz[2])
+        maxZ = 0
+        minZ = 0
+        if len(landmarks_surf) > 0:
+            maxZ = max(surf_lm_xyz[2])
+            minZ = min(surf_lm_xyz[2])
         if maxZ == minZ:
             maxZ = maxZ+1
 
@@ -100,9 +103,12 @@ def update_plot():
 
         fig.clear()
 
-        plt.plot(corners_xy[0], corners_xy[1], 'ro-')
+        plt.plot(corners_xy[0], corners_xy[1], 'black')
         plt.plot(walls_xy[0],   walls_xy[1],   'bo')
-        plt.scatter(surf_lm_xyz[0], surf_lm_xyz[1], marker='.', c=surf_lm_xyz[2], cmap='nipy_spectral')
+        plt.scatter(surf_lm_xyz[0], surf_lm_xyz[1], marker='.', c=surf_lm_xyz[2], cmap='viridis')
+        cbar = plt.colorbar()
+        cbar.ax.tick_params(labelsize=20)
+        cbar.set_label('z-axis [mm]', size=30)
         plt.scatter(current_pos.x, current_pos.y, marker='*', linewidths=4, c='black', s=70, zorder=3)
         plt.arrow(current_pos.x, current_pos.y,
                     30*math.cos(current_pos.phi),
@@ -110,7 +116,10 @@ def update_plot():
                     width=10,
                     facecolor='black',
                     zorder = 2)
-        plt.colorbar()
+        plt.xlabel('x-axis [mm]', fontsize = 30)
+        plt.xticks(fontsize=20)
+        plt.ylabel('y-axis [mm]', fontsize = 30)
+        plt.yticks(fontsize=20)
         plt.draw()
         #fig.canvas.draw_idle()
         reader_thd.plot_updated()

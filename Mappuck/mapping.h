@@ -1,10 +1,9 @@
-#ifndef EKF_H
-#define EKF_H
+#ifndef MAPPING_H
+#define MAPPING_H
 
 #include <ch.h>
 #include <hal.h>
 #include <math.h>
-
 
 #include "landmarks.h"
 
@@ -25,12 +24,12 @@ typedef struct {
 /**
 * @brief Initializes EFK
 */
-void ekf_init(void);
+void mapping_init(void);
 
 /**
 * @brief Stops EFK
 */
-void ekf_stop(void);
+void mapping_stop(void);
 
 /**
 * @brief Returns estimated position of robot

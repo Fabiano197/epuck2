@@ -1,14 +1,14 @@
 #include <main.h>
+#include <mapping.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <motor_control.h>
 #include "memory_protection.h"
 
 
 //Custom Includes
 #include "measurements.h"
-#include "control.h"
-#include "ekf.h"
 #include "communications.h"
 #include "landmarks.h"
 #include "sensors/VL53L0X/VL53L0X.h"
@@ -25,9 +25,9 @@ int main(void)
 
 
     // Init custom libraries.
-    ekf_init();
+    mapping_init();
     measurements_start();
-    control_init();
+    motor_control_init();
     communications_init();
     /* Infinite loop. */
     while (1) {
@@ -38,7 +38,6 @@ int main(void)
 #define STACK_CHK_GUARD 0xe2dee396
 uintptr_t __stack_chk_guard = STACK_CHK_GUARD;
 
-void __stack_chk_fail(void)
-{
+void __stack_chk_fail(void){
     chSysHalt("Stack smashing detected");
 }

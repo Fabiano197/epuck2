@@ -1,28 +1,32 @@
-#include "ekf.h"
 #include "measurements.h"
-#include "control.h"
 #include "landmarks.h"
 #include <main.h>
+#include <mapping.h>
+#include <motor_control.h>
 #include <msgbus/messagebus.h>
 
 #define WALL_DISTANCE 50
 #define EPUCK_RADIUS 35
 #define WHEEL_FULLDIST_STEP 400.0
 #define TICK_TO_MM 0.13
+
 #define STAGE_FIND_BORDER 0
 #define STAGE_FOLLOW_BORDERS 1
 #define STAGE_END 3
+#define STAGE_DEBUG -1
+
+#define NB_MEASUREMENTS_INITIALIZATION 20
 
 static position_t pos = {0,0,0,0,0};
 
-static thread_t *efkThd;
-static bool efk_configured = false;
+static thread_t *mappingThd;
+static bool mapping_configured = false;
 
 static control_command_t u = {0, 10};
 static control_command_t error = {0, 0};
 static measurements_msg_t measurements_values;
 
-static uint8_t stage = STAGE_FOLLOW_BORDERS;
+static uint8_t stage = STAGE_FIND_BORDER;
 
 MUTEX_DECL(bus_lock);
 CONDVAR_DECL(bus_condvar);
@@ -77,8 +81,8 @@ static void set_landmarks(void){
 	enter_landmark(l);
 }
 
-static THD_WORKING_AREA(waEfk, 1024);
-static THD_FUNCTION(efk_thd, arg) {
+static THD_WORKING_AREA(waMapping, 1024);
+static THD_FUNCTION(mapping_thd, arg) {
      (void) arg;
      chRegSetThreadName(__FUNCTION__);
 
@@ -90,6 +94,30 @@ static THD_FUNCTION(efk_thd, arg) {
 
 	 while(chThdShouldTerminateX() == false){
 
+		 if(stage == STAGE_FIND_BORDER){
+			 uint16_t min_dist = UINT16_MAX;
+			 uint16_t min_dist_index = 0;
+			 control_command_t rotate = {2*PI/NB_MEASUREMENTS_INITIALIZATION, 0};
+			 for(uint16_t i = 0; i < NB_MEASUREMENTS_INITIALIZATION; i++){
+				 while(motor_is_running()) chThdSleepMilliseconds(10);
+				 messagebus_topic_wait(measurements_topic, &measurements_values, sizeof(measurements_values));
+				 make_step(rotate);
+				 if(measurements_values.tof_distance_front < min_dist){
+					 min_dist = measurements_values.tof_distance_front;
+					 min_dist_index = i;
+				 }
+			 }
+			 make_step((control_command_t){2*PI*min_dist_index/NB_MEASUREMENTS_INITIALIZATION, 0 });
+
+			 while(measurements_values.tof_distance_front > WALL_DISTANCE){
+				 make_step((control_command_t){0, 10});
+				 while(motor_is_running()) chThdSleepMilliseconds(10);
+				 messagebus_topic_wait(measurements_topic, &measurements_values, sizeof(measurements_values));
+			 }
+			 make_step((control_command_t){-PI/2, 0 });
+			 stage = STAGE_FOLLOW_BORDERS;
+		 }
+
 		 if(stage == STAGE_FOLLOW_BORDERS){
 			 while(motor_is_running()) chThdSleepMilliseconds(10);
 			 messagebus_topic_wait(measurements_topic, &measurements_values, sizeof(measurements_values));
@@ -99,31 +127,32 @@ static THD_FUNCTION(efk_thd, arg) {
 			 set_landmarks();
 		 }
 		 if(stage == STAGE_END){
-			 ekf_stop();
+			 mapping_stop();
 		 }
 
-		 //For measurements debugging only
-		 /*pos.x = measurements_values.proximity_distance_northeast;
-		 pos.y = measurements_values.proximity_distance_east;
-		 pos.z = measurements_values.tof_distance_front;
-		 pos.phi = measurements_values.inclination;*/
-
+		 //For measurement debugging only
+		 /*if(stage == STAGE_DEBUG){
+			 pos.x = measurements_values.proximity_distance_northeast;
+			 pos.y = measurements_values.proximity_distance_east;
+			 pos.z = measurements_values.tof_distance_front;
+			 pos.phi = measurements_values.inclination;
+		 }*/
 	 }
 }
 
 /****************************PUBLIC FUNCTIONS*************************************/
 
 
-void ekf_init(void){
-	if(efk_configured)return;
-	efkThd = chThdCreateStatic(waEfk, sizeof(waEfk), NORMALPRIO+2, efk_thd, NULL);
-	efk_configured = true;
+void mapping_init(void){
+	if(mapping_configured)return;
+	mappingThd = chThdCreateStatic(waMapping, sizeof(waMapping), NORMALPRIO+2, mapping_thd, NULL);
+	mapping_configured = true;
 }
 
-void ekf_stop(void){
-	if(!efk_configured)return;
-	efk_configured = false;
-	chThdTerminate(efkThd);
+void mapping_stop(void){
+	if(!mapping_configured)return;
+	mapping_configured = false;
+	chThdTerminate(mappingThd);
 }
 
 position_t* get_position(void){

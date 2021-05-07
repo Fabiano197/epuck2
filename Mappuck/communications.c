@@ -1,11 +1,11 @@
 #include <ch.h>
 #include <hal.h>
 #include <main.h>
+#include <mapping.h>
 #include "usbcfg.h"
 #include "chprintf.h"
 
 #include "communications.h"
-#include "ekf.h"
 
 static thread_t *comThd;
 static bool com_configured = false;
@@ -54,7 +54,7 @@ static THD_FUNCTION(communication_thd, arg) {
 	(void) arg;
 	while(chThdShouldTerminateX() == false){
 		send_data_Bluetooth();
-		chThdSleepMilliseconds(2000);
+		chThdSleepMilliseconds(1000);
 	}
 }
 

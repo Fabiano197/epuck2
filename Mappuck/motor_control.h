@@ -1,10 +1,10 @@
-#ifndef CONTROL_H
-#define CONTROL_H
+#ifndef MOTOR_CONTROL_H
+#define MOTOR_CONTROL_H
 
 #include <hal.h>
+#include <mapping.h>
 #include <math.h>
 #include "measurements.h"
-#include "ekf.h"
 #include "motors.h"
 
 /*typedef struct {
@@ -17,12 +17,12 @@
 /**
 * @brief Init control
 */
-void control_init(void);
+void motor_control_init(void);
 
 /**
 * @brief Stops control
 */
-void control_stop(void);
+void motor_control_stop(void);
 
 /**
 * @brief Turns angle radians and moves distance mm
