@@ -120,6 +120,7 @@ def update_plot():
         plt.xticks(fontsize=20)
         plt.ylabel('y-axis [mm]', fontsize = 30)
         plt.yticks(fontsize=20)
+        plt.gca().set_aspect('equal', adjustable='box')
         plt.draw()
         #fig.canvas.draw_idle()
         reader_thd.plot_updated()

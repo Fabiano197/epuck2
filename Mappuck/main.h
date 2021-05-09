@@ -1,20 +1,14 @@
-#ifndef PROJECT_MAIN_H_
-#define PROJECT_MAIN_H_
+#ifndef MAIN_H
+#define MAIN_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <msgbus/messagebus.h>
+#include <parameter/parameter.h>
 
-#include "msgbus/messagebus.h"
-#include "parameter/parameter.h"
+#define PI 3.141565
 
 /** Robot wide IPC bus. */
 extern messagebus_t bus;
 
 extern parameter_namespace_t parameter_root;
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* PROJECT_MAIN_H_ */

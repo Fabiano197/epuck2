@@ -1,7 +1,7 @@
 #ifndef COMMUNICATIONS_H
 #define COMMUNICATIONS_H
 
-#include "landmarks.h"
+#include <hal.h>
 
 /**
 * @brief Starts Bluetooth communication with computer

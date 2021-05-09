@@ -1,6 +1,9 @@
-#include <motor_control.h>
+#include <motors.h>
 
-#define MOTORSPEED 200
+#include "motor_control.h"
+#include "main.h"
+#include "math.h"
+#include "measurements.h"
 
 static thread_t *motorControlThd;
 static bool motor_control_configured = false;
@@ -49,11 +52,11 @@ static THD_FUNCTION(motor_control_thd, arg) {
 /****************************PUBLIC FUNCTIONS*************************************/
 
 void motor_control_init(void){
-	motors_init();
 	if(motor_control_configured)return;
+	motors_init();
 	chBSemObjectInit(&motor_running_bsem, false);
 	chBSemObjectInit(&job_available_bsem, true);
-	motorControlThd = chThdCreateStatic(waMotorControl, sizeof(waMotorControl), NORMALPRIO+4, motor_control_thd, NULL);
+	motorControlThd = chThdCreateStatic(waMotorControl, sizeof(waMotorControl), NORMALPRIO+3, motor_control_thd, NULL);
 	motor_control_configured = true;
 }
 
@@ -64,11 +67,13 @@ void motor_control_stop(void){
 }
 
 void make_step(control_command_t u){
+	//Assures that control command is not changed while motors are executing previous job
 	chBSemWait(&motor_running_bsem);
 	target_u = u;
+	//Tells the motor thread that a new job is available
 	chBSemSignal(&job_available_bsem);
 }
 
-bool motor_is_running(void){
+bool is_motor_running(void){
 	return motor_running;
 }

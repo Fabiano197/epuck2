@@ -2,17 +2,13 @@
 #define MOTOR_CONTROL_H
 
 #include <hal.h>
-#include <mapping.h>
-#include <math.h>
-#include "measurements.h"
-#include "motors.h"
 
-/*typedef struct {
+#define MOTORSPEED 200
+
+typedef struct {
 	float angle;
 	uint16_t dist;
-} control_command_t;*/
-
-#define PI 3.141565
+} control_command_t;
 
 /**
 * @brief Init control
@@ -30,8 +26,8 @@ void motor_control_stop(void);
 void make_step(control_command_t u);
 
 /**
-* @brief Returns weather motors are running
+* @brief Returns whether motors are running
 */
-bool motor_is_running(void);
+bool is_motor_running(void);
 
 #endif

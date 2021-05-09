@@ -1,11 +1,8 @@
 #ifndef MAPPING_H
 #define MAPPING_H
 
-#include <ch.h>
 #include <hal.h>
-#include <math.h>
 
-#include "landmarks.h"
 
 typedef struct {
 	float x; 		//ticks
@@ -15,11 +12,6 @@ typedef struct {
 	float theta; 	//rad azimuthal angle compromised between 0 and pi
 
 } position_t;
-
-typedef struct {
-	float angle;
-	uint16_t dist;
-} control_command_t;
 
 /**
 * @brief Initializes EFK

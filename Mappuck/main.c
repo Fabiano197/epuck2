@@ -1,17 +1,15 @@
 #include <main.h>
-#include <mapping.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include <motor_control.h>
-#include "memory_protection.h"
+#include <ch.h>
+#include <hal.h>
+#include <memory_protection.h>
 
 
 //Custom Includes
 #include "measurements.h"
 #include "communications.h"
+#include "mapping.h"
 #include "landmarks.h"
-#include "sensors/VL53L0X/VL53L0X.h"
+#include "motor_control.h"
 
 messagebus_t bus;
 

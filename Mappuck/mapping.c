@@ -1,36 +1,40 @@
+#include <math.h>
+#include <ch.h>
+#include <motors.h>
+
+#include "mapping.h"
+#include "main.h"
 #include "measurements.h"
 #include "landmarks.h"
-#include <main.h>
-#include <mapping.h>
-#include <motor_control.h>
-#include <msgbus/messagebus.h>
+#include "motor_control.h"
 
 #define WALL_DISTANCE 50
 #define EPUCK_RADIUS 35
 #define WHEEL_FULLDIST_STEP 400.0
 #define TICK_TO_MM 0.13
+#define NB_MEASUREMENTS_INITIALIZATION 20
+#define STEP_SIZE 10
 
 #define STAGE_FIND_BORDER 0
 #define STAGE_FOLLOW_BORDERS 1
-#define STAGE_END 3
-#define STAGE_DEBUG -1
-
-#define NB_MEASUREMENTS_INITIALIZATION 20
+#define STAGE_END 2
 
 static position_t pos = {0,0,0,0,0};
 
 static thread_t *mappingThd;
 static bool mapping_configured = false;
 
-static control_command_t u = {0, 10};
+static control_command_t u = {0, STEP_SIZE};
 static control_command_t error = {0, 0};
 static measurements_msg_t measurements_values;
+static messagebus_topic_t *measurements_topic;
 
 static uint8_t stage = STAGE_FIND_BORDER;
 
 MUTEX_DECL(bus_lock);
 CONDVAR_DECL(bus_condvar);
 
+//Calculate control command
 static void calculate_u(void){
 	error.angle = (measurements_values.proximity_distance_east-WALL_DISTANCE) + 4*(measurements_values.proximity_distance_northeast-WALL_DISTANCE*3/2);
 	error.angle /= 1300;
@@ -40,6 +44,7 @@ static void calculate_u(void){
 	u.angle = error.angle;
 }
 
+//Estimate current position
 static void estimate_pos(void){
 	static int32_t old_pos_left = 0;
 	static int32_t old_pos_right = 0;
@@ -63,23 +68,51 @@ static void estimate_pos(void){
 
 static void set_landmarks(void){
 	landmark_t l;
-	/*l.x = pos.x + (measurements_values.tof_distance_front + EPUCK_RADIUS)*cos(pos.phi);
-	l.y = pos.y + (measurements_values.tof_distance_front + EPUCK_RADIUS)*sin(pos.phi);
-	l.z = TOF;
-	if(measurements_values.tof_distance_front <= 300){
-		find_landmark(l);
-	}*/
 	if(measurements_values.proximity_distance_east <= 100){
 		l.x = pos.x + (measurements_values.proximity_distance_east+EPUCK_RADIUS)*cos(pos.phi-PI/2);
 		l.y = pos.y + (measurements_values.proximity_distance_east+EPUCK_RADIUS)*sin(pos.phi-PI/2);
 		l.z = IR;
-		if(enter_landmark(l))stage = STAGE_END;
+		if(enter_landmark(l)){
+			//Ends stage follow borders after wall loop is closed
+			stage = STAGE_END;
+		}
 	}
 	l.x = pos.x;
 	l.y = pos.y;
 	l.z = pos.z;
 	enter_landmark(l);
 }
+
+static void find_borders(void){
+	uint16_t min_dist = UINT16_MAX;
+	uint16_t min_dist_index = 0;
+	control_command_t rotate = {2*PI/NB_MEASUREMENTS_INITIALIZATION, 0};
+	//Find shortest path to next wall
+	for(uint16_t i = 0; i < NB_MEASUREMENTS_INITIALIZATION; i++){
+		while(is_motor_running()) chThdSleepMilliseconds(10);
+		messagebus_topic_wait(measurements_topic, &measurements_values, sizeof(measurements_values));
+		make_step(rotate);
+		if(measurements_values.tof_distance_front < min_dist){
+			min_dist = measurements_values.tof_distance_front;
+			min_dist_index = i;
+		}
+	}
+	make_step((control_command_t){2*PI*min_dist_index/NB_MEASUREMENTS_INITIALIZATION, 0 });
+
+	//Get close to closest wall
+	while(measurements_values.tof_distance_front > WALL_DISTANCE){
+		make_step((control_command_t){0, 10});
+		while(is_motor_running()) chThdSleepMilliseconds(10);
+		messagebus_topic_wait(measurements_topic, &measurements_values, sizeof(measurements_values));
+	}
+	make_step((control_command_t){-PI/2, 0 });
+	while(is_motor_running()) chThdSleepMilliseconds(10);
+	stage = STAGE_FOLLOW_BORDERS;
+	left_motor_set_pos(0);
+	right_motor_set_pos(0);
+}
+
+
 
 static THD_WORKING_AREA(waMapping, 1024);
 static THD_FUNCTION(mapping_thd, arg) {
@@ -88,38 +121,19 @@ static THD_FUNCTION(mapping_thd, arg) {
 
      messagebus_init(&bus, &bus_lock, &bus_condvar);
 
-     messagebus_topic_t *measurements_topic = messagebus_find_topic_blocking(&bus, "/measurements");
+     measurements_topic = messagebus_find_topic_blocking(&bus, "/measurements");
 
+     //Allow some start up time to initialize sensors and let the user time to place the robot on starting position
      chThdSleepMilliseconds(5000);
 
 	 while(chThdShouldTerminateX() == false){
 
 		 if(stage == STAGE_FIND_BORDER){
-			 uint16_t min_dist = UINT16_MAX;
-			 uint16_t min_dist_index = 0;
-			 control_command_t rotate = {2*PI/NB_MEASUREMENTS_INITIALIZATION, 0};
-			 for(uint16_t i = 0; i < NB_MEASUREMENTS_INITIALIZATION; i++){
-				 while(motor_is_running()) chThdSleepMilliseconds(10);
-				 messagebus_topic_wait(measurements_topic, &measurements_values, sizeof(measurements_values));
-				 make_step(rotate);
-				 if(measurements_values.tof_distance_front < min_dist){
-					 min_dist = measurements_values.tof_distance_front;
-					 min_dist_index = i;
-				 }
-			 }
-			 make_step((control_command_t){2*PI*min_dist_index/NB_MEASUREMENTS_INITIALIZATION, 0 });
-
-			 while(measurements_values.tof_distance_front > WALL_DISTANCE){
-				 make_step((control_command_t){0, 10});
-				 while(motor_is_running()) chThdSleepMilliseconds(10);
-				 messagebus_topic_wait(measurements_topic, &measurements_values, sizeof(measurements_values));
-			 }
-			 make_step((control_command_t){-PI/2, 0 });
-			 stage = STAGE_FOLLOW_BORDERS;
+			 find_borders();
 		 }
 
 		 if(stage == STAGE_FOLLOW_BORDERS){
-			 while(motor_is_running()) chThdSleepMilliseconds(10);
+			 while(is_motor_running()) chThdSleepMilliseconds(10);
 			 messagebus_topic_wait(measurements_topic, &measurements_values, sizeof(measurements_values));
 			 calculate_u();
 			 make_step(u);
@@ -129,14 +143,6 @@ static THD_FUNCTION(mapping_thd, arg) {
 		 if(stage == STAGE_END){
 			 mapping_stop();
 		 }
-
-		 //For measurement debugging only
-		 /*if(stage == STAGE_DEBUG){
-			 pos.x = measurements_values.proximity_distance_northeast;
-			 pos.y = measurements_values.proximity_distance_east;
-			 pos.z = measurements_values.tof_distance_front;
-			 pos.phi = measurements_values.inclination;
-		 }*/
 	 }
 }
 
