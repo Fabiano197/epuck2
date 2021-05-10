@@ -1,37 +1,43 @@
 #include <ch.h>
-#include <hal.h>
-#include <main.h>
 #include <math.h>
-#include <msgbus/messagebus.h>
-
-#include "sensors/mpu9250.h"
-#include "sensors/imu.h"
-#include "sensors/proximity.h"
-#include "sensors/VL53L0X/VL53L0X.h"
+#include <sensors/mpu9250.h>
+#include <sensors/imu.h>
+#include <sensors/proximity.h>
+#include <sensors/VL53L0X/VL53L0X.h>
 
 #include "measurements.h"
+#include "main.h"
+
+#define TOF_OFFSET 52
+#define IR_INTENSITY_TO_DISTANCE_CONVERSION_CONSTANT 200000
+#define IR_MAX_DIST 255
+#define ACC_Y 1
+#define ACC_Z 2
+#define NB_ACC_SAMPLES 5
+#define ACC_OFFSET 0.0239
 
 extern messagebus_t bus;
 
-static measurements_msg_t measurements_values = {0,0,0,0,0};
+static measurements_msg_t measurements_values = {0,0,0,0};
 
 static thread_t *measurementsThd;
 static bool measurements_configured = false;
 
 static uint16_t get_tof_distance(void){
-	return VL53L0X_get_dist_mm()-52 ; //remove offset
+	return VL53L0X_get_dist_mm()-TOF_OFFSET ;
 }
 
 static uint16_t get_proximity_distance(uint8_t sensor){
-	uint16_t dist = (uint16_t)(sqrt(200000/get_calibrated_prox(sensor))); //empirical formula to convert from IR intensity to distance
-	if(dist == 0) dist = 255;
+	//empirical formula to convert from IR intensity to distance
+	uint16_t dist = sqrt(IR_INTENSITY_TO_DISTANCE_CONVERSION_CONSTANT/get_calibrated_prox(sensor));
+	if(dist == 0) dist = IR_MAX_DIST;
 	return dist;
 }
 
 static float get_inclination(void){
-	float acc_y = get_acc_filtered(1, 5);
-	float acc_z = get_acc_filtered(2, 5);
-	return atan(-acc_y/acc_z)+0.0239;
+	float acc_y = get_acc_filtered(ACC_Y, NB_ACC_SAMPLES);
+	float acc_z = get_acc_filtered(ACC_Z, NB_ACC_SAMPLES);
+	return atan(-acc_y/acc_z)+ACC_OFFSET;
 }
 
 static THD_WORKING_AREA(waMeasurements, 512);
@@ -45,13 +51,13 @@ static THD_FUNCTION(measurements_thd, arg) {
 	 messagebus_topic_init(&measurements_topic, &measurements_topic_lock, &measurements_topic_condvar, &measurements_values, sizeof(measurements_values));
 	 messagebus_advertise_topic(&bus, &measurements_topic, "/measurements");
 
+	 //Give sensors time to start up
      chThdSleepMilliseconds(2000);
 
 	 while(chThdShouldTerminateX() == false){
 		 measurements_values.tof_distance_front = get_tof_distance();
 		 measurements_values.proximity_distance_northeast = get_proximity_distance(PROXIMITY_NORTHEAST);
 		 measurements_values.proximity_distance_east = get_proximity_distance(PROXIMITY_EAST);
-	     measurements_values.proximity_distance_southeast = get_proximity_distance(PROXIMITY_SOUTHEAST);
 	     measurements_values.inclination = get_inclination();
 
 	     messagebus_topic_publish(&measurements_topic, &measurements_values, sizeof(measurements_values));

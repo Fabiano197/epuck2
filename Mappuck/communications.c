@@ -1,16 +1,16 @@
 #include <ch.h>
-#include <hal.h>
-#include <main.h>
-#include "usbcfg.h"
-#include "chprintf.h"
+#include <chprintf.h>
 
 #include "communications.h"
-#include "ekf.h"
+#include "main.h"
+#include "mapping.h"
+#include "landmarks.h"
+
 
 static thread_t *comThd;
 static bool com_configured = false;
 
-void send_data_Bluetooth(void){
+static void send_data_Bluetooth(void){
 	//Send start message for identification of communication start
 	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)"START", 5);
 
@@ -52,9 +52,10 @@ static THD_WORKING_AREA(waCommunication, 512);
 static THD_FUNCTION(communication_thd, arg) {
 	chRegSetThreadName(__FUNCTION__);
 	(void) arg;
+
 	while(chThdShouldTerminateX() == false){
 		send_data_Bluetooth();
-		chThdSleepMilliseconds(2000);
+		chThdSleepMilliseconds(1000);
 	}
 }
 

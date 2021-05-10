@@ -1,18 +1,16 @@
 #ifndef MEASUREMENT_H
 #define MEASUREMENT_H
 
+#include <hal.h>
+
 #define PROXIMITY_NORTHEAST 1
 #define PROXIMITY_EAST 2
-#define PROXIMITY_SOUTHEAST 3
-
-#include <hal.h>
 
 //Measurements needed for feedback
 typedef struct {
 	uint16_t tof_distance_front; //mm
 	uint16_t proximity_distance_east; //mm
 	uint16_t proximity_distance_northeast; //mm
-	uint16_t proximity_distance_southeast;//mm
 	float inclination; //rad
 } measurements_msg_t;
 

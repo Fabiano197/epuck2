@@ -1,9 +1,12 @@
-#include "control.h"
+#include <motors.h>
 
-#define MOTORSPEED 200
+#include "motor_control.h"
+#include "main.h"
+#include "math.h"
+#include "measurements.h"
 
-static thread_t *controlThd;
-static bool control_configured = false;
+static thread_t *motorControlThd;
+static bool motor_control_configured = false;
 
 static control_command_t target_u;
 static bool motor_running = false;
@@ -11,9 +14,9 @@ static bool motor_running = false;
 static binary_semaphore_t job_available_bsem;
 static binary_semaphore_t motor_running_bsem;
 
-static THD_WORKING_AREA(waControl, 512);
+static THD_WORKING_AREA(waMotorControl, 512);
 
-static THD_FUNCTION(control_thd, arg) {
+static THD_FUNCTION(motor_control_thd, arg) {
 	(void) arg;
 	chRegSetThreadName(__FUNCTION__);
 
@@ -48,27 +51,29 @@ static THD_FUNCTION(control_thd, arg) {
 
 /****************************PUBLIC FUNCTIONS*************************************/
 
-void control_init(void){
+void motor_control_init(void){
+	if(motor_control_configured)return;
 	motors_init();
-	if(control_configured)return;
 	chBSemObjectInit(&motor_running_bsem, false);
 	chBSemObjectInit(&job_available_bsem, true);
-	controlThd = chThdCreateStatic(waControl, sizeof(waControl), NORMALPRIO+4, control_thd, NULL);
-	control_configured = true;
+	motorControlThd = chThdCreateStatic(waMotorControl, sizeof(waMotorControl), NORMALPRIO+3, motor_control_thd, NULL);
+	motor_control_configured = true;
 }
 
-void control_stop(void){
-	if(!control_configured)return;
-	control_configured = false;
-	chThdTerminate(controlThd);
+void motor_control_stop(void){
+	if(!motor_control_configured)return;
+	motor_control_configured = false;
+	chThdTerminate(motorControlThd);
 }
 
 void make_step(control_command_t u){
+	//Assures that control command is not changed while motors are executing previous job
 	chBSemWait(&motor_running_bsem);
 	target_u = u;
+	//Tells the motor thread that a new job is available
 	chBSemSignal(&job_available_bsem);
 }
 
-bool motor_is_running(void){
+bool is_motor_running(void){
 	return motor_running;
 }
