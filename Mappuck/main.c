@@ -21,7 +21,7 @@ int main(void)
     chSysInit();
     mpu_init();
 
-    // Init custom libraries.
+    //Init custom libraries.
     user_feedback_init();
     mapping_init();
     measurements_start();

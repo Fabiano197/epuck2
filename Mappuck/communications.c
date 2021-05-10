@@ -53,6 +53,13 @@ static THD_FUNCTION(communication_thd, arg) {
 	chRegSetThreadName(__FUNCTION__);
 	(void) arg;
 
+	//Give system time to start up
+	chThdSleepMilliseconds(100);
+
+	//Send reset message to reset plot on computer
+	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)"START", 5);
+	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)"RESET", 5);
+
 	while(chThdShouldTerminateX() == false){
 		send_data_Bluetooth();
 		chThdSleepMilliseconds(1000);
