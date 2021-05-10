@@ -8,8 +8,8 @@
 #include "measurements.h"
 #include "communications.h"
 #include "mapping.h"
-#include "landmarks.h"
 #include "motor_control.h"
+#include "user_feedback.h"
 
 messagebus_t bus;
 
@@ -21,12 +21,13 @@ int main(void)
     chSysInit();
     mpu_init();
 
-
     // Init custom libraries.
+    user_feedback_init();
     mapping_init();
     measurements_start();
     motor_control_init();
     communications_init();
+
     /* Infinite loop. */
     while (1) {
     }

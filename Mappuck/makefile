@@ -15,6 +15,7 @@ CSRC += ./main.c \
 		./mapping.c \
 		./landmarks.c \
 		./measurements.c \
+		./user_feedback.c
 
 #Header folders to include
 INCDIR += 	

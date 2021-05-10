@@ -7,6 +7,7 @@
 #include "measurements.h"
 #include "landmarks.h"
 #include "motor_control.h"
+#include "user_feedback.h"
 
 #define WALL_DISTANCE 50
 #define EPUCK_RADIUS 35
@@ -110,6 +111,7 @@ static void find_borders(void){
 	stage = STAGE_FOLLOW_BORDERS;
 	left_motor_set_pos(0);
 	right_motor_set_pos(0);
+	indicate_start_follow_walls();
 }
 
 
@@ -123,8 +125,8 @@ static THD_FUNCTION(mapping_thd, arg) {
 
      measurements_topic = messagebus_find_topic_blocking(&bus, "/measurements");
 
-     //Allow some start up time to initialize sensors and let the user time to place the robot on starting position
-     chThdSleepMilliseconds(5000);
+     //This function takes 5s in order to initialize sensors and let the user time to place the robot on starting position
+     indicate_startup();
 
 	 while(chThdShouldTerminateX() == false){
 
@@ -141,6 +143,7 @@ static THD_FUNCTION(mapping_thd, arg) {
 			 set_landmarks();
 		 }
 		 if(stage == STAGE_END){
+			 indicate_end();
 			 mapping_stop();
 		 }
 	 }

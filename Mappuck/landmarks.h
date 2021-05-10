@@ -10,7 +10,7 @@
 #define NB_WALL_LANDMARK_MAX 300
 #define NB_SURFACE_LANDMARK_MAX 1000
 #define NB_CORNERS_MAX 100
-#define MAX_CORRELATION_ERROR 15 //Maximal accaptable correlation error for line fitting before new corner is created [mm]
+#define MAX_CORRELATION_ERROR 25 //Maximal accaptable correlation error for line fitting before new corner is created [mm]
 #define CLOSE_LOOP_RADIUS 50 //Radius for which wall loop will be closed
 
 //Landmarks
