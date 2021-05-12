@@ -15,6 +15,7 @@
 #define TICK_TO_MM 0.13
 #define NB_MEASUREMENTS_INITIALIZATION 20
 #define STEP_SIZE 10
+#define MAX_USABLE_PROXIMITY_DISTANCE 85
 
 #define STAGE_FIND_BORDER 0
 #define STAGE_FOLLOW_BORDERS 1
@@ -22,7 +23,7 @@
 
 static position_t pos = {0,0,0,0,0};
 
-static thread_t *mappingThd;
+static thread_t* mappingThd;
 static bool mapping_configured = false;
 
 static control_command_t u = {0, STEP_SIZE};
@@ -37,6 +38,7 @@ CONDVAR_DECL(bus_condvar);
 
 //Calculate control command
 static void calculate_u(void){
+	//All numerical values were deduced experimentally
 	error.angle = (measurements_values.proximity_distance_east-WALL_DISTANCE) + 4*(measurements_values.proximity_distance_northeast-WALL_DISTANCE*3/2);
 	error.angle /= 1300;
 	if(measurements_values.tof_distance_front<70){
@@ -69,7 +71,7 @@ static void estimate_pos(void){
 
 static void set_landmarks(void){
 	landmark_t l;
-	if(measurements_values.proximity_distance_east <= 100){
+	if(measurements_values.proximity_distance_east <= MAX_USABLE_PROXIMITY_DISTANCE){
 		l.x = pos.x + (measurements_values.proximity_distance_east+EPUCK_RADIUS)*cos(pos.phi-PI/2);
 		l.y = pos.y + (measurements_values.proximity_distance_east+EPUCK_RADIUS)*sin(pos.phi-PI/2);
 		l.z = IR;
@@ -102,8 +104,7 @@ static void find_borders(void){
 
 	//Get close to closest wall
 	while(measurements_values.tof_distance_front > WALL_DISTANCE){
-		make_step((control_command_t){0, 10});
-		while(is_motor_running()) chThdSleepMilliseconds(10);
+		make_step(u);
 		messagebus_topic_wait(measurements_topic, &measurements_values, sizeof(measurements_values));
 	}
 	make_step((control_command_t){-PI/2, 0 });

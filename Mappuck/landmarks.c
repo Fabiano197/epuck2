@@ -130,6 +130,7 @@ bool enter_landmark(landmark_t coordinates){
 		calculate_linesegments(false);
 		if(N_corners > 1 && distance(first_wall, wall_landmarks[N_wall_landmarks-1]) < CLOSE_LOOP_RADIUS){
 			calculate_linesegments(true);
+			N_wall_landmarks = 0;
 			return true;
 		}
 		return false;

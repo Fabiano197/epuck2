@@ -7,8 +7,6 @@
 #include "user_feedback.h"
 #include "main.h"
 
-#define NB_LED_ROTATIONS 8
-
 static const rgb_colour_t colours[8] = {
 	{
 		100, 0, 0 //RED
@@ -44,7 +42,8 @@ typedef enum{
 	TURQUOISE,
 	BLUE,
 	PINK,
-	WHITE
+	WHITE,
+	NB_COLOURS
 } colour_t;
 
 /****************************PUBLIC FUNCTIONS*************************************/
@@ -64,36 +63,36 @@ void indicate_startup(void){
 	set_led(LED1, 1);
 	playNote(NOTE_C4, 200);
 	chThdSleepMilliseconds(300);
-	set_rgb_led(LED2, RGB_MAX_INTENSITY, 0, 0);
+	set_rgb_led(LED2, colours[RED].r, colours[RED].g, colours[RED].b);
 	chThdSleepMilliseconds(500);
 
 	//Sec 2
 	set_led(LED3, 1);
 	playNote(NOTE_C4, 200);
 	chThdSleepMilliseconds(300);
-	set_rgb_led(LED4, RGB_MAX_INTENSITY, 0, 0);
+	set_rgb_led(LED4, colours[RED].r, colours[RED].g, colours[RED].b);
 	chThdSleepMilliseconds(500);
 
 	//Sec 3
 	set_led(LED5, 1);
 	playNote(NOTE_C4, 200);
 	chThdSleepMilliseconds(300);
-	set_rgb_led(LED6, RGB_MAX_INTENSITY, 0, 0);
+	set_rgb_led(LED6, colours[RED].r, colours[RED].g, colours[RED].b);
 	chThdSleepMilliseconds(500);
 
 	//Sec 4
 	set_led(LED7, 1);
 	playNote(NOTE_C4, 200);
 	chThdSleepMilliseconds(300);
-	set_rgb_led(LED8, RGB_MAX_INTENSITY, 0, 0);
+	set_rgb_led(LED8, colours[RED].r, colours[RED].g, colours[RED].b);
 	chThdSleepMilliseconds(500);
 
 	//Sec 5
 	clear_leds();
-	set_rgb_led(LED2, 0, RGB_MAX_INTENSITY, 0);
-	set_rgb_led(LED4, 0, RGB_MAX_INTENSITY, 0);
-	set_rgb_led(LED6, 0, RGB_MAX_INTENSITY, 0);
-	set_rgb_led(LED8, 0, RGB_MAX_INTENSITY, 0);
+	set_rgb_led(LED2, colours[GREEN].r, colours[GREEN].g, colours[GREEN].b);
+	set_rgb_led(LED4, colours[GREEN].r, colours[GREEN].g, colours[GREEN].b);
+	set_rgb_led(LED6, colours[GREEN].r, colours[GREEN].g, colours[GREEN].b);
+	set_rgb_led(LED8, colours[GREEN].r, colours[GREEN].g, colours[GREEN].b);
 	playNote(NOTE_G4, 500);
 	chThdSleepMilliseconds(500);
 
@@ -102,10 +101,10 @@ void indicate_startup(void){
 
 void indicate_start_follow_walls(){
 
-	set_rgb_led(LED2, 0, 0, RGB_MAX_INTENSITY);
-	set_rgb_led(LED4, 0, 0, RGB_MAX_INTENSITY);
-	set_rgb_led(LED6, 0, 0, RGB_MAX_INTENSITY);
-	set_rgb_led(LED8, 0, 0, RGB_MAX_INTENSITY);
+	set_rgb_led(LED2, colours[BLUE].r, colours[BLUE].g, colours[BLUE].b);
+	set_rgb_led(LED4, colours[BLUE].r, colours[BLUE].g, colours[BLUE].b);
+	set_rgb_led(LED6, colours[BLUE].r, colours[BLUE].g, colours[BLUE].b);
+	set_rgb_led(LED8, colours[BLUE].r, colours[BLUE].g, colours[BLUE].b);
 	playNote(NOTE_C4, 100);
 	chThdSleepMilliseconds(50);
 
@@ -122,16 +121,15 @@ void indicate_start_follow_walls(){
 void indicate_end(){
 	chThdSleepMilliseconds(1000);
 	playMelody(MARIO_FLAG, ML_SIMPLE_PLAY, NULL);
-	for(uint16_t i = 0; i < NB_LED_ROTATIONS; i++){
-		set_rgb_led(LED2, colours[i].red, colours[i].green, colours[i].blue);
+	for(uint16_t i = 0; i < NB_COLOURS; i++){
+		set_rgb_led(LED2, colours[i].r, colours[i].g, colours[i].b);
 		chThdSleepMilliseconds(200);
-		set_rgb_led(LED4, colours[i].red, colours[i].green, colours[i].blue);
+		set_rgb_led(LED4, colours[i].r, colours[i].g, colours[i].b);
 		chThdSleepMilliseconds(200);
-		set_rgb_led(LED6, colours[i].red, colours[i].green, colours[i].blue);
+		set_rgb_led(LED6, colours[i].r, colours[i].g, colours[i].b);
 		chThdSleepMilliseconds(200);
-		set_rgb_led(LED8, colours[i].red, colours[i].green, colours[i].blue);
+		set_rgb_led(LED8, colours[i].r, colours[i].g, colours[i].b);
 		chThdSleepMilliseconds(200);
 	}
 	chThdSleepMilliseconds(1000);
-	//clear_leds();
 }
