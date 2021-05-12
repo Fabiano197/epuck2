@@ -1,3 +1,7 @@
+# File for plotting the data received by Bluetooth from the epuck2
+# The basic structure of the thread and the counter is from the file
+# plotImage.py from the course MICRO-315 used in TP4
+
 import numpy as np
 import matplotlib.pyplot as plt
 plt.style.use('seaborn-whitegrid')
@@ -19,13 +23,18 @@ data_file_path = "testdataNew.txt"
 port_file = open("port.txt", 'r')
 port_name = port_file.readline()
 
-class Numb:
+# class definitions
+class Numbers:
     def __init__(self):
         self.nb_walls = 0
         self.nb_corners = 0
         self.nb_surf_lm = 0
 
-# the structure for a position
+    def reset(self):
+        self.nb_walls = 0
+        self.nb_corners = 0
+        self.nb_surf_lm = 0
+
 class Position:
     def __init__(self, x, y, z, phi, theta):
         self.x = x
@@ -33,11 +42,17 @@ class Position:
         self.z = z
         self.phi = phi
         self.theta = theta
+    
+    def reset(self):
+        self.x = 0.0
+        self.y = 0.0
+        self.z = 0.0
+        self.phi= 0.0
+        self.theta = 0.0
 
     def print(self):
         print("Current position: x= " + str(self.x) + ", y=" + str(self.y) + ", z= " + str(self.z) + "")
         print("Current angles: phi= " + str(self.phi) + ",  theta= " + str(self.theta))
-
 
 class Surf_Landmark:
     def __init__(self, x, y, z):
@@ -65,25 +80,30 @@ class Wall:
     def print(self):
         print("Wall point at: x= " + str(self.x) + ",\ty=" + str(self.y) + "\t")
 
-N = Numb()
+N = Numbers()
 current_pos = Position(0.0, 0.0, 0.0, 0.0, 0.0)
 corner_points = []
-wall_points  = []
+wall_points_active  = []
+wall_points_passive  = []
 landmarks_surf = []
 
 #update the plot
 def update_plot():
     if(reader_thd.need_to_update_plot()):
         global fig
-        corners_xy  = [[],[]]
-        walls_xy    = [[],[]]
-        surf_lm_xyz = [[],[],[]]
+        corners_xy         = [[],[]]
+        walls_active_xy    = [[],[]]
+        walls_passive_xy   = [[],[]]
+        surf_lm_xyz        = [[],[],[]]
         for i in range(len(corner_points)):
             corners_xy[0].append(corner_points[i].x)
             corners_xy[1].append(corner_points[i].y)
-        for i in range(len(wall_points)):
-            walls_xy[0].append(wall_points[i].x)
-            walls_xy[1].append(wall_points[i].y)
+        for i in range(len(wall_points_active)):
+            walls_active_xy[0].append(wall_points_active[i].x)
+            walls_active_xy[1].append(wall_points_active[i].y)
+        for i in range(len(wall_points_passive)):
+            walls_passive_xy[0].append(wall_points_passive[i].x)
+            walls_passive_xy[1].append(wall_points_passive[i].y)
         for i in range(len(landmarks_surf)):
             surf_lm_xyz[0].append(landmarks_surf[i].x)
             surf_lm_xyz[1].append(landmarks_surf[i].y)
@@ -100,15 +120,21 @@ def update_plot():
 
         for z in surf_lm_xyz[2]:
             z = 255*(z-minZ)/(maxZ-minZ)
-
+        
+        # refresh the plot with the new data
         fig.clear()
-
-        plt.plot(corners_xy[0], corners_xy[1], 'black')
-        plt.plot(walls_xy[0],   walls_xy[1],   'bo')
+        # draw the landmark points
+        plt.plot(corners_xy[0], corners_xy[1], 'black', linewidth=3)
+        plt.plot(walls_active_xy[0],  walls_active_xy[1],  'bo', zorder=2)
+        plt.plot(walls_passive_xy[0], walls_passive_xy[1], 'bo', zorder=1, alpha=0.02)
         plt.scatter(surf_lm_xyz[0], surf_lm_xyz[1], marker='.', c=surf_lm_xyz[2], cmap='viridis')
+
+        # configure the colorbar
         cbar = plt.colorbar()
         cbar.ax.tick_params(labelsize=20)
         cbar.set_label('z-axis [mm]', size=30)
+
+        # draw the current position
         plt.scatter(current_pos.x, current_pos.y, marker='*', linewidths=4, c='black', s=70, zorder=3)
         plt.arrow(current_pos.x, current_pos.y,
                     30*math.cos(current_pos.phi),
@@ -116,25 +142,26 @@ def update_plot():
                     width=10,
                     facecolor='black',
                     zorder = 2)
+
+        # configure the plot window
         plt.xlabel('x-axis [mm]', fontsize = 30)
         plt.xticks(fontsize=20)
         plt.ylabel('y-axis [mm]', fontsize = 30)
         plt.yticks(fontsize=20)
         plt.gca().set_aspect('equal', adjustable='box')
         plt.draw()
-        #fig.canvas.draw_idle()
         reader_thd.plot_updated()
 
-
+# read the new data on the Bluetooth port
 def update_data(port):
     readMessageSerial(port)
     reader_thd.tell_to_update_plot()
 
-#handler when closing the window
+# handler when closing the window
 def handle_close(evt):
-    #we write the landmarks and the current pos in the text file
+    # write the landmarks and the current pos in the text file
     write_data_to_file()
-    #we stop the serial thread
+    # stop the serial thread
     reader_thd.stop()
     timer.stop()
 
@@ -174,22 +201,37 @@ def read_START(char, state):
             state = 0
     return state
 
+def reset_data():
+    N.reset()
+    current_pos.reset()
+    corner_points.clear()
+    wall_points_active.clear()
+    wall_points_passive.clear()
+    landmarks_surf.clear()
+    return
+
 #reads the data in uint8 from the serial
 def readMessageSerial(port):
     state = 0
     while(state != 5):
         #reads 1 byte
         c1 = port.read(1)
-        #timeout condition
         if(c1 == b''):
             print('Timout...')
             return
-        #update the state
         state = read_START(c1, state)
+    
+    # check for a reset signal
+    first = port.read(5)
+    reset = struct.unpack('ccccc', first)
+    if(reset[0]==b'R' and reset[1]==b'E' and reset[2]==b'S' and reset[3]==b'E' and reset[4]==b'T'):
+        reset_data()
+        print("Reset data")
+        return
 
     # read the current position of the robot
     global current_pos
-    temp = struct.unpack('fffff', port.read(5*size_float))
+    temp = struct.unpack('fffff', first+port.read(15))
     if temp[0] < outer_rim and temp[0] > -outer_rim and temp[1] < outer_rim and temp[1] > -outer_rim:
         current_pos.x = temp[0]
         current_pos.y = temp[1]
@@ -219,15 +261,19 @@ def readMessageSerial(port):
     N.nb_walls = temp[0]
 
     # read the N.nb_walls wall points
-    global wall_points
-    wall_points.clear()
+    global wall_points_active
+    global wall_points_passive
+    wall_points_active.clear()
     for i in range(N.nb_walls):
         temp = struct.unpack('hh', port.read(2*size_int16))
         if temp[0] < outer_rim and temp[0] > -outer_rim and temp[1] < outer_rim and temp[1] > -outer_rim:
             new_wall = Wall(0,0)
             new_wall.x = temp[0]
             new_wall.y = temp[1]
-            wall_points.append(new_wall)
+            wall_points_active.append(new_wall)
+            if not new_wall in wall_points_passive:
+                wall_points_passive.append(new_wall)
+
 
     #read the number of surface landmarks
     temp = struct.unpack('H', port.read(size_int16))
@@ -261,8 +307,11 @@ def write_data_to_file():
     # print all the walls
     print("Wrote " + str(N.nb_walls) + " Walls to the file.\n")
     data_file.write(str(N.nb_walls) + "\n")
-    for w in wall_points:
+    for w in wall_points_passive:
         data_file.write(str(w.x) + "\t" + str(w.y) + "\n")
+    for w in wall_points_active:
+        data_file.write(str(w.x) + "\t" + str(w.y) + "\n")
+
 
     # print all the surface landmarks
     print("Wrote " + str(N.nb_surf_lm) + " surface landmarks to the file.\n")
@@ -316,15 +365,13 @@ class serial_thread(Thread):
 
 #figure config
 fig = plt.figure()
-#dataPlot = fig.add_subplot(111)
 fig.canvas.set_window_title('Map')
-fig.canvas.mpl_connect('close_event', handle_close) #to detect when the window is closed and if we do a ctrl-c
+fig.canvas.mpl_connect('close_event', handle_close)
 
 #serial reader thread config and start
 reader_thd = serial_thread(port_name)
 reader_thd.start()
 
-#timer to update the plot
 timer = fig.canvas.new_timer(interval=50)
 timer.add_callback(update_plot)
 timer.start()

@@ -58,8 +58,8 @@ static void estimate_pos(void){
 	pos.phi -= (float)(new_pos_left-old_pos_left - new_pos_right+old_pos_right)/WHEEL_FULLDIST_STEP;
 	if(pos.phi > PI)pos.phi -= 2*PI;
 	else if(pos.phi <= -PI)pos.phi += 2*PI;
-	pos.x += dist_steps*cos(pos.phi);
-	pos.y += dist_steps*sin(pos.phi);
+	pos.x += dist_steps*cos(pos.phi)*cos(pos.theta);
+	pos.y += dist_steps*sin(pos.phi)*cos(pos.theta);
 	pos.z += dist_steps*sin(pos.theta);
 	pos.theta = measurements_values.inclination;
 
