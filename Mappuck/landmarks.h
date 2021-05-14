@@ -6,30 +6,29 @@
 
 #define TOF INT16_MIN
 #define IR  INT16_MAX
-#define PROXIMITY_RADIUS 50 //Proxmity Radius [mm]
 #define NB_WALL_LANDMARK_MAX 300
 #define NB_SURFACE_LANDMARK_MAX 1000
 #define NB_CORNERS_MAX 100
-#define MAX_CORRELATION_ERROR 25 //Maximal accaptable correlation error for line fitting before new corner is created [mm]
+#define THRESHOLD_FITTING 25 //Maximal accaptable correlation error for line fitting before new corner is created [mm]
 #define CLOSE_LOOP_RADIUS 100 //Radius for which wall loop will be closed
 
 //Landmarks
 typedef struct {
-	int16_t x; //mm
-	int16_t y; //mm
-	int16_t z; //mm
+	int16_t x; // [mm]
+	int16_t y; // [mm]
+	int16_t z; // [mm]
 
 } landmark_t;
 
 typedef struct {
-	int16_t x; //mm
-	int16_t y; //mm
+	int16_t x; // [mm]
+	int16_t y; // [mm]
 
 } wall_t;
 
 typedef struct {
-  float alpha;
-  float beta;
+  float alpha; 	//y-axis offset [mm]
+  float beta;	//slope [-]
 } line_t;
 
 /**

@@ -14,7 +14,7 @@
 #define WHEEL_FULLDIST_STEP 400.0
 #define TICK_TO_MM 0.13
 #define NB_MEASUREMENTS_INITIALIZATION 20
-#define STEP_SIZE 10
+#define STEP_SIZE 10 // [mm]
 #define MAX_USABLE_PROXIMITY_DISTANCE 85
 
 #define STAGE_FIND_BORDER 0
@@ -58,8 +58,8 @@ static void estimate_pos(void){
 	pos.phi -= (float)(new_pos_left-old_pos_left - new_pos_right+old_pos_right)/WHEEL_FULLDIST_STEP;
 	if(pos.phi > PI)pos.phi -= 2*PI;
 	else if(pos.phi <= -PI)pos.phi += 2*PI;
-	pos.x += dist_steps*cos(pos.phi)*cos(pos.theta);
-	pos.y += dist_steps*sin(pos.phi)*cos(pos.theta);
+	pos.x += dist_steps*cos(pos.phi);
+	pos.y += dist_steps*sin(pos.phi);
 	pos.z += dist_steps*sin(pos.theta);
 	pos.theta = measurements_values.inclination;
 
@@ -108,6 +108,7 @@ static void find_borders(void){
 		messagebus_topic_wait(measurements_topic, &measurements_values, sizeof(measurements_values));
 	}
 	make_step((control_command_t){-PI/2, 0 });
+
 	while(is_motor_running()) chThdSleepMilliseconds(10);
 	stage = STAGE_FOLLOW_BORDERS;
 	left_motor_set_pos(0);

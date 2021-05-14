@@ -49,7 +49,7 @@ static int16_t calculateMaxError(wall_t *l_ptr_begin, uint16_t N){
 			maxErrorIndex = i;
 		}
 	}
-	if(error(line, *(l_ptr_begin+maxErrorIndex))< MAX_CORRELATION_ERROR)return -1;
+	if(error(line, *(l_ptr_begin+maxErrorIndex))< THRESHOLD_FITTING)return -1;
 	return maxErrorIndex;
 }
 

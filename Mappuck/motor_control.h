@@ -3,7 +3,7 @@
 
 #include <hal.h>
 
-#define MOTORSPEED 200
+#define MOTORSPEED 200 //[ticks/s] which corresponds to 0.13*MOTORSPEED [mm/s]
 
 typedef struct {
 	float angle;

@@ -5,6 +5,9 @@
 #include "math.h"
 #include "measurements.h"
 
+#define ANGLE_TO_TIME 208100
+#define DISTANCE_TO_TIME 7950
+
 static thread_t *motorControlThd;
 static bool motor_control_configured = false;
 
@@ -27,20 +30,21 @@ static THD_FUNCTION(motor_control_thd, arg) {
 		if(target_u.angle < 0){
 			right_motor_set_speed(MOTORSPEED);
 			left_motor_set_speed(-MOTORSPEED);
-			chThdSleepMilliseconds((uint16_t)(-target_u.angle*208100/MOTORSPEED+1));
+			chThdSleepMilliseconds((uint16_t)(-target_u.angle*ANGLE_TO_TIME/MOTORSPEED+1));
 		}
 		else if(target_u.angle > 0){
 			right_motor_set_speed(-MOTORSPEED);
 			left_motor_set_speed(MOTORSPEED);
-			chThdSleepMilliseconds((uint16_t)(target_u.angle*208100/MOTORSPEED+1));
+			chThdSleepMilliseconds((uint16_t)(target_u.angle*ANGLE_TO_TIME/MOTORSPEED+1));
 		}
 
 		// advance u.dist in mm
 		if(target_u.dist > 0){
 			right_motor_set_speed(MOTORSPEED);
 			left_motor_set_speed(MOTORSPEED);
-			chThdSleepMilliseconds(target_u.dist*7950/MOTORSPEED+1);
+			chThdSleepMilliseconds(target_u.dist*DISTANCE_TO_TIME/MOTORSPEED+1);
 		}
+
 		right_motor_set_speed(0);
 		left_motor_set_speed(0);
 		motor_running = false;

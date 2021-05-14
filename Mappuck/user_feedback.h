@@ -30,5 +30,4 @@ void indicate_start_follow_walls(void);
 */
 void indicate_end(void);
 
-
 #endif

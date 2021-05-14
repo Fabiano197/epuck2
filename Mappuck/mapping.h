@@ -28,5 +28,4 @@ void mapping_stop(void);
 */
 position_t* get_position(void);
 
-
 #endif
